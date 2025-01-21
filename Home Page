@@ -43,6 +43,7 @@ const CalendarApp: React.FC = () => {
     const [selectedEvent, setSelectedEvent] = useState<Appointment | null>(null);
     const [isEventModalOpen, setIsEventModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('Demographics');
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const generatePatientId = () => {
         return String(Math.floor(100000 + Math.random() * 900000));
@@ -203,6 +204,10 @@ const CalendarApp: React.FC = () => {
     const handleTabChange = (tab: string) => {
         setActiveTab(tab);
     };
+
+     const toggleMenu = () => {
+        setIsMenuOpen(!isMenuOpen);
+    };
     
     const renderMonthView = () => {
         const days = daysInMonth(currentDate);
@@ -311,39 +316,53 @@ const CalendarApp: React.FC = () => {
 
     return (
         <div className="bg-gray-900 min-h-screen text-white">
-             <div className="p-4 flex items-center justify-between">
+             <nav className="bg-gray-800 p-4 flex items-center justify-between">
+                <div className="relative">
+                    <button onClick={toggleMenu} className="text-xl focus:outline-none">
+                        ☰
+                    </button>
+                    {isMenuOpen && (
+                        <div className="absolute left-0 mt-2 w-48 bg-gray-700 rounded-md shadow-lg z-10">
+                            <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-600">Home</a>
+                            <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-600">Patients</a>
+                            <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-600">Account</a>
+                            <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-600">Help</a>
+                             <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-600">Log Out</a>
+                        </div>
+                    )}
+                </div>
                 <div className="text-2xl font-bold">
-                  {view === "month" ? currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-                  : view === "week" ?  `${daysInWeek(currentDate)[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${daysInWeek(currentDate)[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-                  : currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
-                  }
-                   
+                    {view === "month" ? currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                        : view === "week" ?  `${daysInWeek(currentDate)[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${daysInWeek(currentDate)[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                            : currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+                    }
                 </div>
                 <div className="flex items-center gap-2">
                     <button onClick={handleOpenNewAppointmentModal} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
                         Add Appointment
                     </button>
                 </div>
-            </div>
+            </nav>
+             
             <div className="p-4 flex items-center justify-between">
-                <div className="flex gap-2">
-                {view === "month" ?
-                  <>
-                  <button onClick={previousMonth} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&lt;</button>
-                  <button onClick={nextMonth} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&gt;</button>
-                  </>
-                  : view === "week" ?
-                  <>
-                    <button onClick={previousWeek} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&lt;</button>
-                    <button onClick={nextWeek} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&gt;</button>
-                    </>
-                  :
-                  <>
-                    <button onClick={previousDay} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&lt;</button>
-                    <button onClick={nextDay} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&gt;</button>
-                    </>
-                 }
-                </div>
+                 <div className="flex gap-2">
+                   {view === "month" ?
+                      <>
+                      <button onClick={previousMonth} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&lt;</button>
+                      <button onClick={nextMonth} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&gt;</button>
+                      </>
+                       : view === "week" ?
+                       <>
+                        <button onClick={previousWeek} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&lt;</button>
+                        <button onClick={nextWeek} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&gt;</button>
+                        </>
+                       :
+                        <>
+                        <button onClick={previousDay} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&lt;</button>
+                        <button onClick={nextDay} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&gt;</button>
+                        </>
+                    }
+                 </div>
                 <div className="flex gap-2">
                     <button onClick={() => handleViewChange('month')} className={`px-3 py-1 rounded ${view === 'month' ? 'bg-blue-500' : 'bg-gray-800 hover:bg-gray-700'}`}>Month</button>
                     <button onClick={() => handleViewChange('week')} className={`px-3 py-1 rounded ${view === 'week' ? 'bg-blue-500' : 'bg-gray-800 hover:bg-gray-700'}`}>Week</button>
@@ -357,16 +376,17 @@ const CalendarApp: React.FC = () => {
             </div>
 
             <div className="p-4">
-                 <div className="mb-4">
+                 <div className="flex items-center mb-4">
+                     <h2 className="text-xl font-semibold mr-4">Patient List</h2>
                     <input
                         type="text"
                         placeholder="Search patients..."
                         value={searchQuery}
                         onChange={handleSearchChange}
-                        className="bg-gray-700 p-2 rounded text-black w-full"
+                        className="bg-gray-700 p-2 rounded text-black w-auto"
                     />
                 </div>
-                <h2 className="text-xl font-semibold mb-2">Patient List</h2>
+                
                 <div className="overflow-x-auto">
                 <table className="min-w-full bg-gray-800 rounded-lg">
                     <thead>
@@ -400,7 +420,7 @@ const CalendarApp: React.FC = () => {
 
             {isModalOpen && selectedPatient && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
+                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-[800px] h-[600px] overflow-auto">
                         <h2 className="text-xl font-semibold mb-4">{selectedPatient.name}</h2>
                         <div className="flex border-b border-gray-700 mb-4">
                           <button
