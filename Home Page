@@ -1,0 +1,367 @@
+import React, { useState, useEffect } from 'react';
+
+type Appointment = {
+    id: string;
+    title: string;
+    date: Date;
+    time: string;
+    patientId: string;
+};
+
+type Patient = {
+    id: string;
+    name: string;
+    phone: string;
+    email: string;
+    address: string;
+    dob: string;
+    notes: string;
+};
+
+const CalendarApp: React.FC = () => {
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const [view, setView] = useState<'month' | 'week' | 'day'>('month');
+    const [appointments, setAppointments] = useState<Appointment[]>([]);
+    const [patients, setPatients] = useState<Patient[]>([
+        { id: '1', name: 'John Doe', phone: '555-123-4567', email: 'john.doe@example.com', address: '123 Main St', dob: '1990-01-15', notes: 'Regular checkup' },
+        { id: '2', name: 'Jane Smith', phone: '555-987-6543', email: 'jane.smith@example.com', address: '456 Oak Ave', dob: '1985-05-20', notes: 'Follow up' },
+        { id: '3', name: 'Peter Jones', phone: '555-222-3333', email: 'peter.jones@example.com', address: '789 Pine Ln', dob: '1998-12-01', notes: 'New patient' },
+    ]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+    const [newAppointmentModalOpen, setNewAppointmentModalOpen] = useState(false);
+    const [newAppointment, setNewAppointment] = useState<Omit<Appointment, 'id'>>({
+        title: "",
+        date: new Date(),
+        time: "10:00",
+        patientId: "",
+    })
+
+    const daysInMonth = (date: Date) => {
+        return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    };
+
+    const firstDayOfMonth = (date: Date) => {
+        return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    };
+
+    const daysInWeek = (date: Date) => {
+        const firstDayOfWeek = new Date(date);
+        firstDayOfWeek.setDate(date.getDate() - date.getDay());
+    
+        const days = [];
+        for (let i = 0; i < 7; i++) {
+          const day = new Date(firstDayOfWeek);
+          day.setDate(firstDayOfWeek.getDate() + i);
+          days.push(day);
+        }
+        return days;
+      };
+
+    const previousMonth = () => {
+        setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    };
+
+    const nextMonth = () => {
+        setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    };
+
+    const previousWeek = () => {
+        setCurrentDate(prev => {
+            const newDate = new Date(prev);
+            newDate.setDate(prev.getDate() - 7);
+            return newDate
+        })
+    };
+
+    const nextWeek = () => {
+        setCurrentDate(prev => {
+            const newDate = new Date(prev);
+            newDate.setDate(prev.getDate() + 7);
+            return newDate;
+        })
+    };
+
+    const previousDay = () => {
+        setCurrentDate(prev => {
+            const newDate = new Date(prev);
+            newDate.setDate(prev.getDate() - 1);
+            return newDate;
+        })
+    }
+
+    const nextDay = () => {
+        setCurrentDate(prev => {
+            const newDate = new Date(prev);
+            newDate.setDate(prev.getDate() + 1);
+            return newDate;
+        })
+    }
+
+    const handleViewChange = (newView: 'month' | 'week' | 'day') => {
+        setView(newView);
+    };
+
+
+    const handlePatientClick = (patientId: string) => {
+        const patient = patients.find((p) => p.id === patientId);
+        if (patient) {
+            setSelectedPatient(patient);
+            setIsModalOpen(true);
+        }
+    };
+    
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setSelectedPatient(null)
+    }
+
+    const handleOpenNewAppointmentModal = () => {
+        setNewAppointmentModalOpen(true);
+    };
+    const handleCloseNewAppointmentModal = () => {
+        setNewAppointmentModalOpen(false);
+         setNewAppointment({
+            title: "",
+            date: new Date(),
+            time: "10:00",
+            patientId: "",
+        });
+    };
+    const handleNewAppointmentChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+
+        if(name === "date"){
+            setNewAppointment({
+                ...newAppointment,
+                date: new Date(value)
+            })
+            return;
+        }
+        setNewAppointment({
+          ...newAppointment,
+          [name]: value,
+        });
+    };
+
+    const handleAddNewAppointment = () => {
+        setAppointments([...appointments, {...newAppointment, id: String(Math.random())}]);
+        handleCloseNewAppointmentModal()
+    };
+
+    const renderMonthView = () => {
+        const days = daysInMonth(currentDate);
+        const firstDay = firstDayOfMonth(currentDate);
+        const dayArray = [];
+    
+        for(let i = 0; i < firstDay; i++) {
+            dayArray.push(null);
+        }
+        for (let i = 1; i <= days; i++) {
+            dayArray.push(i);
+        }
+    
+        return (
+          <div className="grid grid-cols-7 gap-2 p-2">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                  <div key={day} className="text-gray-400 font-semibold text-center">{day}</div>
+                ))}
+            {dayArray.map((day, index) => {
+                if(day === null) {
+                  return <div key={index} className="p-2 h-24 bg-gray-700 border-2 border-gray-900 rounded-lg"></div>
+                }
+                const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+                const dayAppointments = appointments.filter(app => app.date.toDateString() === date.toDateString())
+                return (
+                    <div key={index} className={`p-2 h-24 bg-gray-700 border-2 border-gray-900 rounded-lg ${day === currentDate.getDate() && currentDate.getMonth() === new Date().getMonth() && currentDate.getFullYear() === new Date().getFullYear() ? 'border-blue-500' : '' }`}>
+                        <span className="text-white font-semibold">{day}</span>
+                        {dayAppointments.map(app => (
+                            <div key={app.id} className="mt-1 p-1 rounded-md text-xs bg-blue-900">{app.title}</div>
+                        ))}
+                    </div>
+                )
+            })}
+          </div>
+        )
+    };
+
+    const renderWeekView = () => {
+        const weekDays = daysInWeek(currentDate);
+        
+        return (
+            <div className="grid grid-cols-7 gap-2 p-2">
+              {weekDays.map((day) => {
+                const dayAppointments = appointments.filter(app => app.date.toDateString() === day.toDateString())
+                return (
+                    <div key={day.getTime()} className={`p-2 h-48 bg-gray-700 border-2 border-gray-900 rounded-lg ${day.toDateString() === currentDate.toDateString() ? 'border-blue-500' : '' }`}>
+                      <span className="text-white font-semibold">{day.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })}</span>
+                      {dayAppointments.map(app => (
+                            <div key={app.id} className="mt-1 p-1 rounded-md text-xs bg-blue-900">{app.title}</div>
+                        ))}
+                    </div>
+                )
+              })}
+            </div>
+          );
+    };
+
+    const renderDayView = () => {
+      const dayAppointments = appointments.filter(app => app.date.toDateString() === currentDate.toDateString())
+      return(
+        <div className='p-2 h-96 bg-gray-700 border-2 border-gray-900 rounded-lg'>
+            <div className="text-white font-semibold text-xl pb-4">{currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</div>
+                {dayAppointments.map(app => (
+                  <div key={app.id} className="mt-1 p-1 rounded-md text-sm bg-blue-900">{app.title} - {app.time}</div>
+                  ))}
+        </div>
+      )
+    }
+
+
+    return (
+        <div className="bg-gray-900 min-h-screen text-white">
+             <div className="p-4 flex items-center justify-between">
+                <div className="text-2xl font-bold">
+                  {view === "month" ? currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                  : view === "week" ?  `${daysInWeek(currentDate)[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${daysInWeek(currentDate)[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                  : currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+                  }
+                   
+                </div>
+                <div className="flex items-center gap-2">
+                    <button onClick={handleOpenNewAppointmentModal} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
+                        Add Appointment
+                    </button>
+                </div>
+            </div>
+            <div className="p-4 flex items-center justify-between">
+                <div className="flex gap-2">
+                {view === "month" ?
+                  <>
+                  <button onClick={previousMonth} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&lt;</button>
+                  <button onClick={nextMonth} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&gt;</button>
+                  </>
+                  : view === "week" ?
+                  <>
+                    <button onClick={previousWeek} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&lt;</button>
+                    <button onClick={nextWeek} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&gt;</button>
+                    </>
+                  :
+                  <>
+                    <button onClick={previousDay} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&lt;</button>
+                    <button onClick={nextDay} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&gt;</button>
+                    </>
+                 }
+                </div>
+                <div className="flex gap-2">
+                    <button onClick={() => handleViewChange('month')} className={`px-3 py-1 rounded ${view === 'month' ? 'bg-blue-500' : 'bg-gray-800 hover:bg-gray-700'}`}>Month</button>
+                    <button onClick={() => handleViewChange('week')} className={`px-3 py-1 rounded ${view === 'week' ? 'bg-blue-500' : 'bg-gray-800 hover:bg-gray-700'}`}>Week</button>
+                    <button onClick={() => handleViewChange('day')} className={`px-3 py-1 rounded ${view === 'day' ? 'bg-blue-500' : 'bg-gray-800 hover:bg-gray-700'}`}>Day</button>
+                </div>
+            </div>
+            <div className="p-4">
+                {view === 'month' && renderMonthView()}
+                {view === 'week' && renderWeekView()}
+                {view === 'day' && renderDayView()}
+            </div>
+
+            <div className="p-4">
+                <h2 className="text-xl font-semibold mb-2">Patient List</h2>
+                <div className="overflow-x-auto">
+                <table className="min-w-full bg-gray-800 rounded-lg">
+                    <thead>
+                        <tr className="text-gray-400">
+                            <th className="px-4 py-2 text-left">ID</th>
+                            <th className="px-4 py-2 text-left">Name</th>
+                            <th className="px-4 py-2 text-left">Phone</th>
+                            <th className="px-4 py-2 text-left">Email</th>
+                            <th className="px-4 py-2 text-left">Address</th>
+                            <th className="px-4 py-2 text-left">DOB</th>
+                            <th className="px-4 py-2 text-left">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {patients.map(patient => (
+                            <tr key={patient.id} className="border-t border-gray-700 hover:bg-gray-700 cursor-pointer">
+                                <td className="px-4 py-2 text-blue-400" onClick={() => handlePatientClick(patient.id)}>{patient.id}</td>
+                                <td className="px-4 py-2">{patient.name}</td>
+                                <td className="px-4 py-2">{patient.phone}</td>
+                                <td className="px-4 py-2">{patient.email}</td>
+                                <td className="px-4 py-2">{patient.address}</td>
+                                <td className="px-4 py-2">{patient.dob}</td>
+                                <td className="px-4 py-2">{patient.notes}</td>
+                            </tr>
+                    ))}
+                </tbody>
+                </table>
+                </div>
+
+            </div>
+
+            {isModalOpen && selectedPatient && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
+                        <h2 className="text-xl font-semibold mb-4">{selectedPatient.name}</h2>
+                        <p className="mb-2"><strong>Phone:</strong> {selectedPatient.phone}</p>
+                        <p className="mb-2"><strong>Email:</strong> {selectedPatient.email}</p>
+                        <p className="mb-2"><strong>Address:</strong> {selectedPatient.address}</p>
+                        <p className="mb-2"><strong>Date of Birth:</strong> {selectedPatient.dob}</p>
+                        <p className="mb-4"><strong>Notes:</strong> {selectedPatient.notes}</p>
+                        <div className="flex justify-end">
+                            <button onClick={handleCloseModal} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">Close</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {newAppointmentModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
+                        <h2 className="text-xl font-semibold mb-4">Add New Appointment</h2>
+                        <input
+                            type="text"
+                            name="title"
+                            placeholder="Title"
+                            value={newAppointment.title}
+                            onChange={handleNewAppointmentChange}
+                            className="w-full p-2 mb-2 text-black rounded"
+                        />
+                          <input
+                            type="date"
+                            name="date"
+                            value={newAppointment.date.toISOString().split('T')[0]}
+                            onChange={handleNewAppointmentChange}
+                            className="w-full p-2 mb-2 text-black rounded"
+                        />
+                         <input
+                            type="time"
+                             name="time"
+                             value={newAppointment.time}
+                            onChange={handleNewAppointmentChange}
+                            className="w-full p-2 mb-2 text-black rounded"
+                        />
+                        
+                         <select
+                             name="patientId"
+                             value={newAppointment.patientId}
+                             onChange={handleNewAppointmentChange}
+                             className="w-full p-2 mb-2 text-black rounded"
+                           >
+                              <option value="">Select Patient</option>
+                             {patients.map(patient => (
+                                <option key={patient.id} value={patient.id}>
+                                  {patient.name}
+                                </option>
+                             ))}
+                            </select>
+                        <div className="flex justify-end gap-2">
+                            <button onClick={handleCloseNewAppointmentModal} className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded">Cancel</button>
+                            <button onClick={handleAddNewAppointment} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">Add</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default CalendarApp;
