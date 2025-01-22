@@ -44,6 +44,20 @@ const CalendarApp: React.FC = () => {
     const [isEventModalOpen, setIsEventModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('Demographics');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isAddPatientModalOpen, setIsAddPatientModalOpen] = useState(false);
+    const [newPatient, setNewPatient] = useState<Omit<Patient, 'id'>>({
+         name: "",
+        phone: "",
+        email: "",
+        address: "",
+        dob: "",
+        notes: "",
+        medicalHistory: "",
+        treatment: "",
+        billing: "",
+    });
+    const [isEditEventModalOpen, setIsEditEventModalOpen] = useState(false);
+     const [editEvent, setEditEvent] = useState<Appointment | null>(null);
 
     const generatePatientId = () => {
         return String(Math.floor(100000 + Math.random() * 900000));
@@ -171,6 +185,38 @@ const CalendarApp: React.FC = () => {
         patient.id.includes(searchQuery)
     );
 
+     const handleOpenAddPatientModal = () => {
+        setIsAddPatientModalOpen(true);
+    };
+
+    const handleCloseAddPatientModal = () => {
+         setIsAddPatientModalOpen(false);
+          setNewPatient({
+              name: "",
+             phone: "",
+             email: "",
+             address: "",
+             dob: "",
+             notes: "",
+             medicalHistory: "",
+             treatment: "",
+             billing: "",
+         });
+    };
+
+    const handleNewPatientChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+         setNewPatient({
+          ...newPatient,
+          [name]: value,
+        });
+    }
+    
+    const handleAddNewPatient = () => {
+          setPatients([...patients, {...newPatient, id: generatePatientId()}]);
+          handleCloseAddPatientModal();
+      }
+
     const handleEventClick = (appointment: Appointment) => {
         setSelectedEvent(appointment);
         setIsEventModalOpen(true);
@@ -207,6 +253,47 @@ const CalendarApp: React.FC = () => {
 
      const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
+    };
+
+     const handleEditEventClick = (appointment: Appointment) => {
+        setEditEvent(appointment);
+        setIsEditEventModalOpen(true);
+    };
+
+    const handleCloseEditEventModal = () => {
+        setIsEditEventModalOpen(false);
+        setEditEvent(null);
+    };
+
+     const handleEditEventChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        if(!editEvent) return;
+
+        const { name, value } = e.target;
+        
+        if(name === "date"){
+            setEditEvent({
+                ...editEvent,
+                date: new Date(value)
+            })
+            return;
+        }
+        setEditEvent({
+          ...editEvent,
+          [name]: value,
+        });
+    };
+
+    const handleUpdateEvent = () => {
+        if(!editEvent) return;
+        
+        const updatedAppointments = appointments.map(app => {
+            if (app.id === editEvent.id) {
+                return editEvent;
+            }
+            return app;
+        });
+        setAppointments(updatedAppointments);
+        handleCloseEditEventModal();
     };
     
     const renderMonthView = () => {
@@ -376,15 +463,20 @@ const CalendarApp: React.FC = () => {
             </div>
 
             <div className="p-4">
-                 <div className="flex items-center mb-4">
+                 <div className="flex items-center mb-4 justify-between">
                      <h2 className="text-xl font-semibold mr-4">Patient List</h2>
-                    <input
-                        type="text"
-                        placeholder="Search patients..."
-                        value={searchQuery}
-                        onChange={handleSearchChange}
-                        className="bg-gray-700 p-2 rounded text-black w-auto"
-                    />
+                     <div className="flex items-center gap-2">
+                        <input
+                            type="text"
+                            placeholder="Search patients..."
+                            value={searchQuery}
+                            onChange={handleSearchChange}
+                             className="bg-gray-700 p-2 rounded text-black w-auto"
+                         />
+                         <button onClick={handleOpenAddPatientModal} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
+                              Add Patient
+                         </button>
+                      </div>
                 </div>
                 
                 <div className="overflow-x-auto">
@@ -420,7 +512,8 @@ const CalendarApp: React.FC = () => {
 
             {isModalOpen && selectedPatient && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-[800px] h-[600px] overflow-auto">
+                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-screen max-w-2xl h-screen max-h-[80vh] overflow-auto relative">
+                         <button onClick={handleCloseModal} className="absolute top-4 right-4 bg-gray-700 hover:bg-gray-600 text-white p-2 rounded">X</button>
                         <h2 className="text-xl font-semibold mb-4">{selectedPatient.name}</h2>
                         <div className="flex border-b border-gray-700 mb-4">
                           <button
@@ -472,8 +565,88 @@ const CalendarApp: React.FC = () => {
                                 <p className="mb-4"><strong>Billing:</strong> {selectedPatient.billing}</p>
                             </div>
                         )}
-                        <div className="flex justify-end">
-                            <button onClick={handleCloseModal} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">Close</button>
+                    </div>
+                </div>
+            )}
+             {isAddPatientModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
+                        <h2 className="text-xl font-semibold mb-4">Add New Patient</h2>
+                         <input
+                            type="text"
+                            name="name"
+                            placeholder="Name"
+                            value={newPatient.name}
+                            onChange={handleNewPatientChange}
+                            className="w-full p-2 mb-2 text-black rounded"
+                        />
+                        <input
+                            type="text"
+                            name="phone"
+                             placeholder="Phone"
+                            value={newPatient.phone}
+                            onChange={handleNewPatientChange}
+                            className="w-full p-2 mb-2 text-black rounded"
+                        />
+                         <input
+                            type="email"
+                            name="email"
+                             placeholder="Email"
+                            value={newPatient.email}
+                            onChange={handleNewPatientChange}
+                            className="w-full p-2 mb-2 text-black rounded"
+                        />
+                         <input
+                            type="text"
+                            name="address"
+                             placeholder="Address"
+                            value={newPatient.address}
+                            onChange={handleNewPatientChange}
+                            className="w-full p-2 mb-2 text-black rounded"
+                        />
+                          <input
+                            type="text"
+                             name="dob"
+                             placeholder="Date of Birth"
+                            value={newPatient.dob}
+                             onChange={handleNewPatientChange}
+                            className="w-full p-2 mb-2 text-black rounded"
+                        />
+                         <input
+                            type="text"
+                            name="notes"
+                            placeholder="Notes"
+                            value={newPatient.notes}
+                            onChange={handleNewPatientChange}
+                            className="w-full p-2 mb-2 text-black rounded"
+                        />
+                         <input
+                            type="text"
+                            name="medicalHistory"
+                            placeholder="Medical History"
+                            value={newPatient.medicalHistory}
+                             onChange={handleNewPatientChange}
+                            className="w-full p-2 mb-2 text-black rounded"
+                        />
+                         <input
+                            type="text"
+                            name="treatment"
+                            placeholder="Treatment"
+                            value={newPatient.treatment}
+                             onChange={handleNewPatientChange}
+                            className="w-full p-2 mb-2 text-black rounded"
+                        />
+                         <input
+                             type="text"
+                            name="billing"
+                            placeholder="Billing"
+                            value={newPatient.billing}
+                             onChange={handleNewPatientChange}
+                            className="w-full p-2 mb-2 text-black rounded"
+                         />
+                        <div className="flex justify-end gap-2">
+                             <button onClick={handleCloseAddPatientModal} className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded">Cancel</button>
+                            <button onClick={handleAddNewPatient} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">Add</button>
                         </div>
                     </div>
                 </div>
@@ -486,12 +659,61 @@ const CalendarApp: React.FC = () => {
                         <p className="mb-2"><strong>Date:</strong> {selectedEvent.date.toLocaleDateString()}</p>
                         <p className="mb-2"><strong>Time:</strong> {selectedEvent.time}</p>
                          <p className="mb-2"><strong>Patient ID:</strong> {selectedEvent.patientId}</p>
-                        <div className="flex justify-end">
+                        <div className="flex justify-end gap-2">
+                              <button onClick={() => handleEditEventClick(selectedEvent)} className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded">Edit Details</button>
                             <button onClick={handleCloseEventModal} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">Close</button>
                         </div>
                     </div>
                 </div>
             )}
+            
+             {isEditEventModalOpen && editEvent && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
+                         <h2 className="text-xl font-semibold mb-4">Edit Appointment</h2>
+                        <input
+                            type="text"
+                            name="title"
+                            placeholder="Title"
+                            value={editEvent.title}
+                            onChange={handleEditEventChange}
+                             className="w-full p-2 mb-2 text-black rounded"
+                        />
+                          <input
+                            type="date"
+                             name="date"
+                             value={editEvent.date.toISOString().split('T')[0]}
+                             onChange={handleEditEventChange}
+                            className="w-full p-2 mb-2 text-black rounded"
+                        />
+                         <input
+                            type="time"
+                            name="time"
+                             value={editEvent.time}
+                            onChange={handleEditEventChange}
+                             className="w-full p-2 mb-2 text-black rounded"
+                        />
+                          <select
+                             name="patientId"
+                             value={editEvent.patientId}
+                             onChange={handleEditEventChange}
+                             className="w-full p-2 mb-2 text-black rounded"
+                           >
+                              <option value="">Select Patient</option>
+                             {patients.map(patient => (
+                                <option key={patient.id} value={patient.id}>
+                                  {patient.name}
+                                </option>
+                             ))}
+                            </select>
+                         <div className="flex justify-end gap-2">
+                             <button onClick={handleCloseEditEventModal} className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded">Cancel</button>
+                            <button onClick={handleUpdateEvent} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">Update</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
 
             {newAppointmentModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
