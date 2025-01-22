@@ -13,10 +13,9 @@ interface StructuredData {
 const App: React.FC = () => {
   const [inputText, setInputText] = useState<string>('');
   const [structuredData, setStructuredData] = useState<StructuredData | null>(null);
-  const [hl7Output, setHl7Output] = useState<string>('');
-  const [fhirOutput, setFhirOutput] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [filteredTypes, setFilteredTypes] = useState<string[]>([]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputText(e.target.value);
@@ -49,8 +48,6 @@ const App: React.FC = () => {
         if (response && response.data) {
           const data = response.data.structuredData;
           setStructuredData(data);
-          generateHL7(data);
-          generateFHIR(data);
         } else {
           setError("Failed to process the data. Please try again.");
         }
@@ -62,178 +59,131 @@ const App: React.FC = () => {
 
   };
 
-
-
-    const generateHL7 = (data: StructuredData) => {
-        let hl7 = 'MSH|^~\\&|APP_SENDER|FACILITY_SENDER|APP_RECEIVER|FACILITY_RECEIVER|202310261200||ADT^A01|MSGID123|P|2.3.1\r';
-
-
-        if(data.patient) {
-            hl7 += `PID|||${data.patient.name}^^~^|${data.patient.dob}|${data.patient.gender}\r`;
+      const handleFilterChange = (type: string) => {
+      setFilteredTypes((prev) => {
+        if (prev.includes(type)) {
+          return prev.filter((t) => t !== type);
+        } else {
+          return [...prev, type];
         }
-        if(data.provider) {
-             hl7 += `PRD||${data.provider.name}||${data.provider.specialty}\r`;
-        }
-        if (data.treatment) {
-            hl7 += `TXA|||${data.treatment}\r`;
-        }
-        if (data.dates) {
-            hl7 += `DG1|||${data.injuryOrDisease}||${data.dates.start}^${data.dates.end || ''}\r`
-        }
-        if (data.medications) {
-            data.medications.forEach(med => {
-                hl7 += `RXO|||${med}\r`;
-            })
-        }
-        if(data.medicalDevices) {
-           data.medicalDevices.forEach(device => {
-               hl7 += `INV|||${device}\r`;
-            });
-        }
-        setHl7Output(hl7);
-    }
+      });
+    };
 
-    const generateFHIR = (data: StructuredData) => {
-        const fhirResource: any = {
-            resourceType: "Bundle",
-            type: "transaction",
-            entry: [],
-        };
-
-        if (data.patient) {
-            fhirResource.entry.push({
-                resource: {
-                    resourceType: "Patient",
-                    name: [{ text: data.patient.name }],
-                    birthDate: data.patient.dob,
-                    gender: data.patient.gender.toLowerCase(),
-                },
-                request: { method: "POST", url: "Patient" },
-            });
-        }
-        if (data.provider) {
-            fhirResource.entry.push({
-                resource: {
-                    resourceType: "Practitioner",
-                    name: [{ text: data.provider.name }],
-                    specialty: [{ text: data.provider.specialty }],
-                },
-                request: { method: "POST", url: "Practitioner" },
-            });
-        }
-
-        if (data.treatment) {
-            fhirResource.entry.push({
-                resource: {
-                    resourceType: "Procedure",
-                    code: { text: data.treatment },
-                },
-                request: { method: "POST", url: "Procedure" },
-            });
-        }
+    const renderFilteredData = () => {
+         if (!structuredData) return null;
+        return Object.entries(structuredData).filter(([key]) => filteredTypes.length === 0 || filteredTypes.includes(key)).map(([key, value]) => {
+            let colorClass = 'bg-gray-200';
+            switch(key) {
+                case 'patient': colorClass = 'bg-red-200'; break;
+                case 'provider': colorClass = 'bg-green-200'; break;
+                case 'treatment': colorClass = 'bg-blue-200'; break;
+                case 'dates': colorClass = 'bg-yellow-200'; break;
+                case 'medications': colorClass = 'bg-purple-200'; break;
+                case 'injuryOrDisease': colorClass = 'bg-pink-200'; break;
+                case 'medicalDevices': colorClass = 'bg-teal-200'; break;
+                default: colorClass = 'bg-gray-200';
+            }
 
 
-        if(data.injuryOrDisease) {
-             fhirResource.entry.push({
-                resource: {
-                    resourceType: "Condition",
-                    code: { text: data.injuryOrDisease },
-                 },
-                 request: { method: "POST", url: "Condition" },
-              });
-        }
-         if (data.dates) {
-              fhirResource.entry.push({
-                  resource: {
-                     resourceType: "Encounter",
-                     period: {start: data.dates.start, end: data.dates.end }
-                 },
-                 request: { method: "POST", url: "Encounter" },
-              });
-        }
-
-        if (data.medications) {
-            data.medications.forEach(med => {
-                  fhirResource.entry.push({
-                   resource: {
-                        resourceType: "MedicationRequest",
-                        medicationCodeableConcept: { text: med }
-                   },
-                    request: { method: "POST", url: "MedicationRequest" },
-                });
-            });
-
-        }
-
-        if (data.medicalDevices) {
-            data.medicalDevices.forEach(device => {
-               fhirResource.entry.push({
-                   resource: {
-                       resourceType: "Device",
-                       type: { text: device }
-                   },
-                    request: { method: "POST", url: "Device" },
-               });
-           });
-       }
-
-      setFhirOutput(JSON.stringify(fhirResource, null, 2));
-    }
-
+            return (
+              <div key={key} className={`p-4 mb-4 rounded-md ${colorClass}`}>
+                <h3 className="font-semibold text-gray-700 capitalize">{key}</h3>
+                    <pre className="text-sm overflow-x-auto">{JSON.stringify(value, null, 2)}</pre>
+                </div>
+            );
+          });
+    };
 
 
 
   return (
-    <div className="flex flex-col items-center p-8 bg-gray-100 min-h-screen">
-      <h1 className="text-3xl font-bold mb-8 text-gray-800">Clinical Data Converter</h1>
-      <div className="w-full max-w-2xl bg-white p-6 rounded-lg shadow-md mb-8">
-        <h2 className="text-xl font-semibold mb-4 text-gray-700">Input Clinical Notes</h2>
-        <textarea
-          value={inputText}
-          onChange={handleInputChange}
-          placeholder="Enter clinical notes here..."
-          className="w-full p-3 border rounded-md text-gray-700 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-shadow"
-          rows={8}
-        />
-          <div className="mt-4 flex justify-center">
-              <button
-                  onClick={handleSubmit}
-                  className={`bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
-                   disabled={loading}
-                >
-                  {loading ? 'Processing...' : 'Convert'}
-              </button>
-          </div>
-          {error && <p className="text-red-500 mt-2">{error}</p>}
+    <div className="flex bg-gray-800 text-white min-h-screen">
+      <div className="flex flex-col items-center p-8 w-full max-w-5xl">
+        <h1 className="text-3xl font-bold mb-8 text-white">Clinical Notes</h1>
+        <div className="w-full bg-gray-700 p-6 rounded-lg shadow-md mb-8">
+          <h2 className="text-xl font-semibold mb-4 text-gray-100">Input Clinical Notes</h2>
+          <textarea
+            value={inputText}
+            onChange={handleInputChange}
+            placeholder="Enter clinical notes here..."
+            className="w-full p-3 border rounded-md text-gray-700 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-shadow text-black"
+            rows={8}
+          />
+            <div className="mt-4 flex justify-center">
+                <button
+                    onClick={handleSubmit}
+                    className={`bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
+                     disabled={loading}
+                  >
+                    {loading ? 'Processing...' : 'Convert'}
+                </button>
+            </div>
+            {error && <p className="text-red-500 mt-2">{error}</p>}
+        </div>
+
+           <div className="w-full bg-gray-700 p-6 rounded-lg shadow-md mb-8">
+                <h2 className="text-xl font-semibold mb-4 text-gray-100">Structured Data</h2>
+                 <div className="flex flex-wrap">
+                   {renderFilteredData()}
+                 </div>
+
+             </div>
+
       </div>
-
-        {structuredData && (
-            <div className="w-full max-w-2xl bg-white p-6 rounded-lg shadow-md mb-8">
-                <h2 className="text-xl font-semibold mb-4 text-gray-700">Structured Data</h2>
-                <pre className="bg-gray-50 p-4 rounded-md text-sm overflow-x-auto">
-                  {JSON.stringify(structuredData, null, 2)}
-                </pre>
-            </div>
-        )}
-
-
-        {hl7Output && (
-        <div className="w-full max-w-2xl bg-white p-6 rounded-lg shadow-md mb-8">
-                <h2 className="text-xl font-semibold mb-4 text-gray-700">HL7 Output</h2>
-                <pre className="bg-gray-50 p-4 rounded-md text-sm overflow-x-auto">
-                  {hl7Output}
-                </pre>
-            </div>
-        )}
-
-         {fhirOutput && (
-            <div className="w-full max-w-2xl bg-white p-6 rounded-lg shadow-md mb-8">
-                <h2 className="text-xl font-semibold mb-4 text-gray-700">FHIR Output</h2>
-                <pre className="bg-gray-50 p-4 rounded-md text-sm overflow-x-auto">
-                   {fhirOutput}
-                </pre>
-            </div>
-        )}
+         <div className="w-1/4 p-6  bg-gray-900 text-white  border-l border-gray-700">
+            <h2 className="text-xl font-semibold mb-4">Filter Data Types</h2>
+            <div className="flex flex-col space-y-2">
+                 <label className="flex items-center space-x-2">
+                      <input type="checkbox" className="rounded border-gray-700 focus:ring-blue-500"
+                           checked={filteredTypes.includes('patient')}
+                           onChange={() => handleFilterChange('patient')}
+                      />
+                      <span className="text-gray-300">Patient</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                       <input type="checkbox" className="rounded border-gray-700 focus:ring-blue-500"
+                              checked={filteredTypes.includes('provider')}
+                               onChange={() => handleFilterChange('provider')}
+                       />
+                      <span className="text-gray-300">Provider</span>
+                  </label>
+                <label className="flex items-center space-x-2">
+                     <input type="checkbox" className="rounded border-gray-700 focus:ring-blue-500"
+                         checked={filteredTypes.includes('treatment')}
+                         onChange={() => handleFilterChange('treatment')}
+                     />
+                     <span className="text-gray-300">Treatment</span>
+                  </label>
+                 <label className="flex items-center space-x-2">
+                      <input type="checkbox"  className="rounded border-gray-700 focus:ring-blue-500"
+                          checked={filteredTypes.includes('dates')}
+                          onChange={() => handleFilterChange('dates')}
+                     />
+                     <span className="text-gray-300">Dates</span>
+                </label>
+               <label className="flex items-center space-x-2">
+                    <input type="checkbox"  className="rounded border-gray-700 focus:ring-blue-500"
+                          checked={filteredTypes.includes('medications')}
+                         onChange={() => handleFilterChange('medications')}
+                    />
+                     <span className="text-gray-300">Medications</span>
+              </label>
+                <label className="flex items-center space-x-2">
+                    <input type="checkbox" className="rounded border-gray-700 focus:ring-blue-500"
+                         checked={filteredTypes.includes('injuryOrDisease')}
+                         onChange={() => handleFilterChange('injuryOrDisease')}
+                     />
+                    <span className="text-gray-300">Injury/Disease</span>
+                 </label>
+               <label className="flex items-center space-x-2">
+                    <input type="checkbox" className="rounded border-gray-700 focus:ring-blue-500"
+                           checked={filteredTypes.includes('medicalDevices')}
+                           onChange={() => handleFilterChange('medicalDevices')}
+                    />
+                    <span className="text-gray-300">Medical Devices</span>
+                </label>
+             </div>
+          </div>
     </div>
   );
 };
