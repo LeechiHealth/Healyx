@@ -1,0 +1,185 @@
+import React, { useState } from 'react';
+
+export default function AccountPage() {
+    const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState<'card' | 'bank'>('card');
+    const [adminName, setAdminName] = useState("Dr. Example Admin");
+    const [organization, setOrganization] = useState("Example Healthcare");
+    const [npi, setNpi] = useState("1234567890");
+    const [email, setEmail] = useState("admin@example.com");
+
+    const handleOpenBillingModal = () => {
+        setIsBillingModalOpen(true);
+    };
+
+    const handleCloseBillingModal = () => {
+        setIsBillingModalOpen(false);
+    };
+
+    const handlePaymentMethodChange = (method: 'card' | 'bank') => {
+        setPaymentMethod(method);
+    };
+
+     const handleEditAccountInfo = () => {
+        // Implement logic to enable editing of the account information fields.
+    };
+
+    const handleSaveAccountInfo = () => {
+        // Implement logic to save changes to account information.
+        console.log("Account info saved.");
+    };
+
+
+    return (
+        <div className="bg-gray-800 min-h-screen text-white">
+            <div className="container mx-auto p-8">
+                <h1 className="text-4xl font-bold mb-8 text-white">Account Settings</h1>
+
+                <div className="bg-gray-700 rounded-lg p-6 mb-8">
+                    <h2 className="text-2xl font-semibold mb-4 text-blue-300">Account Information</h2>
+                    <div className="space-y-4">
+                       <div className="flex items-center justify-between">
+                            <label className="block text-gray-300 text-sm font-medium mb-2">Admin Name:</label>
+                            <input 
+                            type="text"
+                             value={adminName}
+                             onChange={(e) => setAdminName(e.target.value)}
+                             className="bg-gray-600 text-white border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 w-1/2"
+                             />
+                       </div>
+                       <div className="flex items-center justify-between">
+                            <label className="block text-gray-300 text-sm font-medium mb-2">Account Number:</label>
+                            <span className="text-gray-400 text-sm ml-4">#7894561230</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <label className="block text-gray-300 text-sm font-medium mb-2">Organization:</label>
+                            <input 
+                            type="text"
+                            value={organization}
+                            onChange={(e) => setOrganization(e.target.value)}
+                             className="bg-gray-600 text-white border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 w-1/2"
+                            />
+                        </div>
+                       <div className="flex items-center justify-between">
+                            <label className="block text-gray-300 text-sm font-medium mb-2">NPI:</label>
+                             <input 
+                            type="text"
+                            value={npi}
+                            onChange={(e) => setNpi(e.target.value)}
+                             className="bg-gray-600 text-white border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 w-1/2"
+                            />
+                        </div>
+                        <div className="flex items-center justify-between">
+                             <label className="block text-gray-300 text-sm font-medium mb-2">Email:</label>
+                             <input 
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                             className="bg-gray-600 text-white border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 w-1/2"
+                            />
+                        </div>
+
+                    </div>
+                    <div className="mt-4 flex justify-end space-x-2">
+                        <button
+                            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                            onClick={handleEditAccountInfo}
+                        >
+                            Edit
+                        </button>
+                         <button
+                            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                            onClick={handleSaveAccountInfo}
+                        >
+                            Save
+                        </button>
+                    </div>
+                </div>
+
+                <div className="bg-gray-700 rounded-lg p-6 mb-8">
+                    <h2 className="text-2xl font-semibold mb-4 text-blue-300">Import/Export Patients</h2>
+                    <p className="text-gray-300 mb-4">Import or export patient lists as CSV files.</p>
+                    <div className="flex space-x-4">
+                        <button className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                            Import Patients
+                        </button>
+                        <button className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                            Export Patients
+                        </button>
+                    </div>
+                </div>
+
+                <div className="bg-gray-700 rounded-lg p-6 mb-8">
+                    <h2 className="text-2xl font-semibold mb-4 text-blue-300">Billing Information</h2>
+                     <p className="text-gray-300 mb-4">Manage your payment methods and subscription.</p>
+                    <button
+                        onClick={handleOpenBillingModal}
+                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    >
+                        Manage Billing
+                    </button>
+                </div>
+
+                  {isBillingModalOpen && (
+                    <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center">
+                        <div className="bg-gray-800 rounded-lg p-8 w-96">
+                            <h2 className="text-2xl font-semibold mb-6 text-blue-300">Billing Details</h2>
+                            <div className="flex justify-between mb-4">
+                                <button
+                                    onClick={() => handlePaymentMethodChange('card')}
+                                    className={`text-white py-2 px-4 rounded ${paymentMethod === 'card' ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'}`}
+                                >
+                                    Add Card
+                                </button>
+                                <button
+                                    onClick={() => handlePaymentMethodChange('bank')}
+                                    className={`text-white py-2 px-4 rounded ${paymentMethod === 'bank' ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'}`}
+                                >
+                                    Add Bank Account
+                                </button>
+                            </div>
+
+                            {paymentMethod === 'card' && (
+                                <div className="space-y-4">
+                                    <label className="block text-gray-300 text-sm font-medium">Card Number:</label>
+                                    <input type="text" className="bg-gray-600 text-white border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 w-full" />
+                                    <label className="block text-gray-300 text-sm font-medium">Expiry Date:</label>
+                                    <input type="text" className="bg-gray-600 text-white border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 w-full" />
+                                     <label className="block text-gray-300 text-sm font-medium">CVC:</label>
+                                    <input type="text" className="bg-gray-600 text-white border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 w-full" />
+                                </div>
+                            )}
+                            {paymentMethod === 'bank' && (
+                                <div className="space-y-4">
+                                    <label className="block text-gray-300 text-sm font-medium">Account Holder Name:</label>
+                                    <input type="text" className="bg-gray-600 text-white border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 w-full" />
+                                    <label className="block text-gray-300 text-sm font-medium">Account Number:</label>
+                                    <input type="text" className="bg-gray-600 text-white border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 w-full" />
+                                    <label className="block text-gray-300 text-sm font-medium">Routing Number:</label>
+                                    <input type="text" className="bg-gray-600 text-white border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 w-full" />
+                                </div>
+                            )}
+
+                            <div className="flex justify-end mt-6">
+                                <button
+                                    onClick={handleCloseBillingModal}
+                                    className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mr-2"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleCloseBillingModal}
+                                    className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                >
+                                    Save
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+
+            </div>
+        </div>
+    );
+}
