@@ -1,0 +1,241 @@
+import React, { useState } from 'react';
+
+interface StructuredData {
+  patient?: { name: string; dob: string; gender: string };
+  provider?: { name: string; specialty: string };
+  treatment?: string;
+  dates?: { start: string; end?: string };
+  medications?: string[];
+  injuryOrDisease?: string;
+  medicalDevices?: string[];
+}
+
+const App: React.FC = () => {
+  const [inputText, setInputText] = useState<string>('');
+  const [structuredData, setStructuredData] = useState<StructuredData | null>(null);
+  const [hl7Output, setHl7Output] = useState<string>('');
+  const [fhirOutput, setFhirOutput] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputText(e.target.value);
+  };
+
+
+  const handleSubmit = async () => {
+      setLoading(true);
+      setError(null);
+
+      // Mock API call
+      // Replace this with actual API endpoint call when you have one
+      try {
+        const response = await new Promise<{ data: { structuredData: StructuredData } }>((resolve) => {
+            setTimeout(() => {
+                const mockStructuredData: StructuredData = {
+                   patient: { name: 'John Doe', dob: '1980-01-01', gender: 'Male' },
+                   provider: { name: 'Dr. Smith', specialty: 'Cardiology' },
+                   treatment: 'Angioplasty',
+                   dates: { start: '2023-10-26', end: '2023-10-27' },
+                   medications: ['Aspirin', 'Clopidogrel'],
+                   injuryOrDisease: 'Coronary Artery Disease',
+                   medicalDevices: ['Stent'],
+                };
+
+               resolve({ data: { structuredData: mockStructuredData }});
+            }, 1000)
+        });
+
+        if (response && response.data) {
+          const data = response.data.structuredData;
+          setStructuredData(data);
+          generateHL7(data);
+          generateFHIR(data);
+        } else {
+          setError("Failed to process the data. Please try again.");
+        }
+      } catch (err) {
+        setError("An unexpected error occurred. Please try again.");
+      } finally {
+          setLoading(false);
+      }
+
+  };
+
+
+
+    const generateHL7 = (data: StructuredData) => {
+        let hl7 = 'MSH|^~\\&|APP_SENDER|FACILITY_SENDER|APP_RECEIVER|FACILITY_RECEIVER|202310261200||ADT^A01|MSGID123|P|2.3.1\r';
+
+
+        if(data.patient) {
+            hl7 += `PID|||${data.patient.name}^^~^|${data.patient.dob}|${data.patient.gender}\r`;
+        }
+        if(data.provider) {
+             hl7 += `PRD||${data.provider.name}||${data.provider.specialty}\r`;
+        }
+        if (data.treatment) {
+            hl7 += `TXA|||${data.treatment}\r`;
+        }
+        if (data.dates) {
+            hl7 += `DG1|||${data.injuryOrDisease}||${data.dates.start}^${data.dates.end || ''}\r`
+        }
+        if (data.medications) {
+            data.medications.forEach(med => {
+                hl7 += `RXO|||${med}\r`;
+            })
+        }
+        if(data.medicalDevices) {
+           data.medicalDevices.forEach(device => {
+               hl7 += `INV|||${device}\r`;
+            });
+        }
+        setHl7Output(hl7);
+    }
+
+    const generateFHIR = (data: StructuredData) => {
+        const fhirResource: any = {
+            resourceType: "Bundle",
+            type: "transaction",
+            entry: [],
+        };
+
+        if (data.patient) {
+            fhirResource.entry.push({
+                resource: {
+                    resourceType: "Patient",
+                    name: [{ text: data.patient.name }],
+                    birthDate: data.patient.dob,
+                    gender: data.patient.gender.toLowerCase(),
+                },
+                request: { method: "POST", url: "Patient" },
+            });
+        }
+        if (data.provider) {
+            fhirResource.entry.push({
+                resource: {
+                    resourceType: "Practitioner",
+                    name: [{ text: data.provider.name }],
+                    specialty: [{ text: data.provider.specialty }],
+                },
+                request: { method: "POST", url: "Practitioner" },
+            });
+        }
+
+        if (data.treatment) {
+            fhirResource.entry.push({
+                resource: {
+                    resourceType: "Procedure",
+                    code: { text: data.treatment },
+                },
+                request: { method: "POST", url: "Procedure" },
+            });
+        }
+
+
+        if(data.injuryOrDisease) {
+             fhirResource.entry.push({
+                resource: {
+                    resourceType: "Condition",
+                    code: { text: data.injuryOrDisease },
+                 },
+                 request: { method: "POST", url: "Condition" },
+              });
+        }
+         if (data.dates) {
+              fhirResource.entry.push({
+                  resource: {
+                     resourceType: "Encounter",
+                     period: {start: data.dates.start, end: data.dates.end }
+                 },
+                 request: { method: "POST", url: "Encounter" },
+              });
+        }
+
+        if (data.medications) {
+            data.medications.forEach(med => {
+                  fhirResource.entry.push({
+                   resource: {
+                        resourceType: "MedicationRequest",
+                        medicationCodeableConcept: { text: med }
+                   },
+                    request: { method: "POST", url: "MedicationRequest" },
+                });
+            });
+
+        }
+
+        if (data.medicalDevices) {
+            data.medicalDevices.forEach(device => {
+               fhirResource.entry.push({
+                   resource: {
+                       resourceType: "Device",
+                       type: { text: device }
+                   },
+                    request: { method: "POST", url: "Device" },
+               });
+           });
+       }
+
+      setFhirOutput(JSON.stringify(fhirResource, null, 2));
+    }
+
+
+
+
+  return (
+    <div className="flex flex-col items-center p-8 bg-gray-100 min-h-screen">
+      <h1 className="text-3xl font-bold mb-8 text-gray-800">Clinical Data Converter</h1>
+      <div className="w-full max-w-2xl bg-white p-6 rounded-lg shadow-md mb-8">
+        <h2 className="text-xl font-semibold mb-4 text-gray-700">Input Clinical Notes</h2>
+        <textarea
+          value={inputText}
+          onChange={handleInputChange}
+          placeholder="Enter clinical notes here..."
+          className="w-full p-3 border rounded-md text-gray-700 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-shadow"
+          rows={8}
+        />
+          <div className="mt-4 flex justify-center">
+              <button
+                  onClick={handleSubmit}
+                  className={`bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
+                   disabled={loading}
+                >
+                  {loading ? 'Processing...' : 'Convert'}
+              </button>
+          </div>
+          {error && <p className="text-red-500 mt-2">{error}</p>}
+      </div>
+
+        {structuredData && (
+            <div className="w-full max-w-2xl bg-white p-6 rounded-lg shadow-md mb-8">
+                <h2 className="text-xl font-semibold mb-4 text-gray-700">Structured Data</h2>
+                <pre className="bg-gray-50 p-4 rounded-md text-sm overflow-x-auto">
+                  {JSON.stringify(structuredData, null, 2)}
+                </pre>
+            </div>
+        )}
+
+
+        {hl7Output && (
+        <div className="w-full max-w-2xl bg-white p-6 rounded-lg shadow-md mb-8">
+                <h2 className="text-xl font-semibold mb-4 text-gray-700">HL7 Output</h2>
+                <pre className="bg-gray-50 p-4 rounded-md text-sm overflow-x-auto">
+                  {hl7Output}
+                </pre>
+            </div>
+        )}
+
+         {fhirOutput && (
+            <div className="w-full max-w-2xl bg-white p-6 rounded-lg shadow-md mb-8">
+                <h2 className="text-xl font-semibold mb-4 text-gray-700">FHIR Output</h2>
+                <pre className="bg-gray-50 p-4 rounded-md text-sm overflow-x-auto">
+                   {fhirOutput}
+                </pre>
+            </div>
+        )}
+    </div>
+  );
+};
+
+export default App;
