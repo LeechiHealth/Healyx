@@ -1,0 +1,119 @@
+import React, { useState, useRef, useEffect } from 'react';
+
+const OrbChat = () => {
+  const [inputValue, setInputValue] = useState('');
+  const [chatHistory, setChatHistory] = useState<string[]>([]);
+  const [showChat, setShowChat] = useState(false);
+  const orbRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (showChat && chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [showChat, chatHistory]); 
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputValue.trim() !== '') {
+      setChatHistory(prevHistory => [
+        ...prevHistory, 
+        `**You:** ${inputValue}`, 
+        `**ChatGPT:** ${generateResponse(inputValue)}` // Example: Generate a response 
+      ]);
+      setInputValue('');
+      setShowChat(true);
+    }
+  };
+
+  const handleBack = () => {
+    setShowChat(false);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+  };
+
+  const renderOrb = () => {
+    return (
+      <div
+        ref={orbRef}
+        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 rounded-full bg-gradient-to-br from-blue-200 via-blue-300 to-blue-400 opacity-70 pointer-events-none"
+        style={{
+          filter: `blur(5px)`, 
+          boxShadow: "0 0 50px rgba(0, 0, 255, 0.2)",
+          position: 'fixed',
+        }}
+      >
+        <div className="absolute inset-0  animate-pulse">
+          {Array.from({ length: 150 }, (_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 rounded-full bg-blue-100 opacity-50"
+              style={{
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 2}s`,
+                animationDuration: `${Math.random() * 2 + 1}s`,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderInput = () => {
+    return (
+      <div className="z-10 flex items-center absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4/5 max-w-lg">
+        <form onSubmit={handleSubmit} className="flex items-center w-full">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={handleInputChange}
+            placeholder="How can I help you?"
+            className="bg-gray-800 bg-opacity-50 border border-gray-700 text-white rounded-l-full py-2 px-4 w-full focus:outline-none focus:border-blue-500 placeholder-gray-400"
+          />
+          <button type="submit" className="bg-blue-600 hover:bg-blue-500 rounded-r-full p-2 focus:outline-none">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="white" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.769 59.769 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+            </svg>
+          </button>
+        </form>
+      </div>
+    );
+  };
+
+  const renderChat = () => {
+    return (
+      <div className="absolute inset-0 flex flex-col p-4 bg-gray-900 bg-opacity-90 overflow-y-auto" ref={chatContainerRef}> 
+        <button onClick={handleBack} className="bg-gray-700 hover:bg-gray-600 text-white rounded-md p-2 mb-4 w-fit">
+          Back
+        </button>
+        {chatHistory.map((message, index) => (
+          <div key={index} className="bg-gray-800 bg-opacity-50 rounded-lg p-4 mb-2 text-white">
+            {message} 
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-900 relative overflow-hidden"> 
+      {renderOrb()}
+      {showChat ? renderChat() : renderInput()}
+    </div>
+  );
+};
+
+// Example: Simple response generation (replace with actual AI logic)
+function generateResponse(userMessage: string): string {
+  if (userMessage.toLowerCase().includes('hello')) {
+    return 'Hello! How can I assist you today?';
+  } else {
+    return 'I am still learning. Let me try to understand your request.';
+  }
+}
+
+export default OrbChat;
