@@ -1,769 +1,1083 @@
-import React, { useState, useEffect } from 'react';
+"use client"
+
+import type React from "react"
+import { useState } from "react"
+import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline"
 
 type Appointment = {
-    id: string;
-    title: string;
-    date: Date;
-    time: string;
-    patientId: string;
-};
+  id: string
+  title: string
+  date: Date
+  time: string
+  patientId: string
+}
+
+type MedicalHistoryEntry = {
+  id: string
+  date: string
+  condition: string
+  notes: string
+}
 
 type Patient = {
-    id: string;
-    name: string;
-    phone: string;
-    email: string;
-    address: string;
-    dob: string;
-    notes: string;
-    medicalHistory: string;
-    treatment: string;
-    billing: string;
-};
+  id: string
+  name: string
+  phone: string
+  email: string
+  address: string
+  dob: string
+  sex?: string
+  raceEthnicity?: string
+  preferredLanguage?: string
+  notes: string
+  medicalHistory: MedicalHistoryEntry[]
+  treatment: string
+  billing: string
+}
 
 const CalendarApp: React.FC = () => {
-    const [currentDate, setCurrentDate] = useState(new Date());
-    const [view, setView] = useState<'month' | 'week' | 'day'>('month');
-    const [appointments, setAppointments] = useState<Appointment[]>([]);
-    const [patients, setPatients] = useState<Patient[]>([
-        { id: '123456', name: 'John Doe', phone: '555-123-4567', email: 'john.doe@example.com', address: '123 Main St', dob: '1990-01-15', notes: 'Regular checkup', medicalHistory: 'No significant medical history', treatment: 'Routine checkup', billing: 'Paid' },
-        { id: '234567', name: 'Jane Smith', phone: '555-987-6543', email: 'jane.smith@example.com', address: '456 Oak Ave', dob: '1985-05-20', notes: 'Follow up', medicalHistory: 'Allergies to peanuts', treatment: 'Follow up appointment', billing: 'Pending' },
-        { id: '345678', name: 'Peter Jones', phone: '555-222-3333', email: 'peter.jones@example.com', address: '789 Pine Ln', dob: '1998-12-01', notes: 'New patient', medicalHistory: 'Asthma', treatment: 'Initial consultation', billing: 'Unpaid' },
-    ]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-    const [newAppointmentModalOpen, setNewAppointmentModalOpen] = useState(false);
-    const [newAppointment, setNewAppointment] = useState<Omit<Appointment, 'id'>>({
-        title: "",
-        date: new Date(),
-        time: "10:00",
-        patientId: "",
-    });
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedEvent, setSelectedEvent] = useState<Appointment | null>(null);
-    const [isEventModalOpen, setIsEventModalOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState('Demographics');
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [isAddPatientModalOpen, setIsAddPatientModalOpen] = useState(false);
-    const [newPatient, setNewPatient] = useState<Omit<Patient, 'id'>>({
-         name: "",
-        phone: "",
-        email: "",
-        address: "",
-        dob: "",
-        notes: "",
-        medicalHistory: "",
-        treatment: "",
-        billing: "",
-    });
-    const [isEditEventModalOpen, setIsEditEventModalOpen] = useState(false);
-     const [editEvent, setEditEvent] = useState<Appointment | null>(null);
+  const [currentDate, setCurrentDate] = useState(new Date())
+  const [view, setView] = useState<"month" | "week" | "day">("month")
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [patients, setPatients] = useState<Patient[]>([
+    {
+      id: "123456",
+      name: "John Doe",
+      phone: "555-123-4567",
+      email: "john.doe@example.com",
+      address: "123 Main St",
+      dob: "1990-01-15",
+      sex: "Male",
+      raceEthnicity: "Caucasian",
+      preferredLanguage: "English",
+      notes: "Regular checkup",
+      medicalHistory: [
+        { id: "1", date: "2022-05-15", condition: "Hypertension", notes: "Prescribed medication" },
+        { id: "2", date: "2023-01-10", condition: "Flu", notes: "Recovered after 1 week" },
+      ],
+      treatment: "Routine checkup",
+      billing: "Paid",
+    },
+    {
+      id: "234567",
+      name: "Jane Smith",
+      phone: "555-987-6543",
+      email: "jane.smith@example.com",
+      address: "456 Oak Ave",
+      dob: "1985-05-20",
+      notes: "Follow up",
+      medicalHistory: [],
+      treatment: "Follow up appointment",
+      billing: "Pending",
+    },
+    {
+      id: "345678",
+      name: "Peter Jones",
+      phone: "555-222-3333",
+      email: "peter.jones@example.com",
+      address: "789 Pine Ln",
+      dob: "1998-12-01",
+      notes: "New patient",
+      medicalHistory: [],
+      treatment: "Initial consultation",
+      billing: "Unpaid",
+    },
+  ])
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
+  const [newAppointmentModalOpen, setNewAppointmentModalOpen] = useState(false)
+  const [newAppointment, setNewAppointment] = useState<Omit<Appointment, "id">>({
+    title: "",
+    date: new Date(),
+    time: "10:00",
+    patientId: "",
+  })
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedEvent, setSelectedEvent] = useState<Appointment | null>(null)
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState("Demographics")
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isAddPatientModalOpen, setIsAddPatientModalOpen] = useState(false)
+  const [newPatient, setNewPatient] = useState<Omit<Patient, "id" | "medicalHistory">>({
+    name: "",
+    phone: "",
+    email: "",
+    address: "",
+    dob: "",
+    sex: "",
+    raceEthnicity: "",
+    preferredLanguage: "",
+    notes: "",
+    treatment: "",
+    billing: "",
+  })
+  const [isEditEventModalOpen, setIsEditEventModalOpen] = useState(false)
+  const [editEvent, setEditEvent] = useState<Appointment | null>(null)
+  const [newMedicalHistoryEntry, setNewMedicalHistoryEntry] = useState<Omit<MedicalHistoryEntry, "id">>({
+    date: "",
+    condition: "",
+    notes: "",
+  })
+  const [editingMedicalHistoryId, setEditingMedicalHistoryId] = useState<string | null>(null)
 
-    const generatePatientId = () => {
-        return String(Math.floor(100000 + Math.random() * 900000));
-      };
+  const generatePatientId = () => {
+    return String(Math.floor(100000 + Math.random() * 900000))
+  }
 
-    const daysInMonth = (date: Date) => {
-        return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-    };
+  const daysInMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+  }
 
-    const firstDayOfMonth = (date: Date) => {
-        return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-    };
+  const firstDayOfMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay()
+  }
 
-    const daysInWeek = (date: Date) => {
-        const firstDayOfWeek = new Date(date);
-        firstDayOfWeek.setDate(date.getDate() - date.getDay());
-    
-        const days = [];
-        for (let i = 0; i < 7; i++) {
-          const day = new Date(firstDayOfWeek);
-          day.setDate(firstDayOfWeek.getDate() + i);
-          days.push(day);
-        }
-        return days;
-      };
+  const daysInWeek = (date: Date) => {
+    const firstDayOfWeek = new Date(date)
+    firstDayOfWeek.setDate(date.getDate() - date.getDay())
 
-    const previousMonth = () => {
-        setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
-    };
-
-    const nextMonth = () => {
-        setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
-    };
-
-    const previousWeek = () => {
-        setCurrentDate(prev => {
-            const newDate = new Date(prev);
-            newDate.setDate(prev.getDate() - 7);
-            return newDate
-        })
-    };
-
-    const nextWeek = () => {
-        setCurrentDate(prev => {
-            const newDate = new Date(prev);
-            newDate.setDate(prev.getDate() + 7);
-            return newDate;
-        })
-    };
-
-    const previousDay = () => {
-        setCurrentDate(prev => {
-            const newDate = new Date(prev);
-            newDate.setDate(prev.getDate() - 1);
-            return newDate;
-        })
+    const days = []
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(firstDayOfWeek)
+      day.setDate(firstDayOfWeek.getDate() + i)
+      days.push(day)
     }
+    return days
+  }
 
-    const nextDay = () => {
-        setCurrentDate(prev => {
-            const newDate = new Date(prev);
-            newDate.setDate(prev.getDate() + 1);
-            return newDate;
-        })
+  const previousMonth = () => {
+    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
+  }
+
+  const nextMonth = () => {
+    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))
+  }
+
+  const previousWeek = () => {
+    setCurrentDate((prev) => {
+      const newDate = new Date(prev)
+      newDate.setDate(prev.getDate() - 7)
+      return newDate
+    })
+  }
+
+  const nextWeek = () => {
+    setCurrentDate((prev) => {
+      const newDate = new Date(prev)
+      newDate.setDate(prev.getDate() + 7)
+      return newDate
+    })
+  }
+
+  const previousDay = () => {
+    setCurrentDate((prev) => {
+      const newDate = new Date(prev)
+      newDate.setDate(prev.getDate() - 1)
+      return newDate
+    })
+  }
+
+  const nextDay = () => {
+    setCurrentDate((prev) => {
+      const newDate = new Date(prev)
+      newDate.setDate(prev.getDate() + 1)
+      return newDate
+    })
+  }
+
+  const handleViewChange = (newView: "month" | "week" | "day") => {
+    setView(newView)
+  }
+
+  const handlePatientClick = (patientId: string) => {
+    const patient = patients.find((p) => p.id === patientId)
+    if (patient) {
+      setSelectedPatient(patient)
+      setIsModalOpen(true)
     }
+  }
 
-    const handleViewChange = (newView: 'month' | 'week' | 'day') => {
-        setView(newView);
-    };
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setSelectedPatient(null)
+    setActiveTab("Demographics")
+  }
 
+  const handleOpenNewAppointmentModal = () => {
+    setNewAppointmentModalOpen(true)
+  }
+  const handleCloseNewAppointmentModal = () => {
+    setNewAppointmentModalOpen(false)
+    setNewAppointment({
+      title: "",
+      date: new Date(),
+      time: "10:00",
+      patientId: "",
+    })
+  }
+  const handleNewAppointmentChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
 
-    const handlePatientClick = (patientId: string) => {
-        const patient = patients.find((p) => p.id === patientId);
-        if (patient) {
-            setSelectedPatient(patient);
-            setIsModalOpen(true);
-        }
-    };
-    
-    const handleCloseModal = () => {
-        setIsModalOpen(false);
-        setSelectedPatient(null);
-        setActiveTab('Demographics')
+    if (name === "date") {
+      setNewAppointment({
+        ...newAppointment,
+        date: new Date(value),
+      })
+      return
     }
+    setNewAppointment({
+      ...newAppointment,
+      [name]: value,
+    })
+  }
 
-    const handleOpenNewAppointmentModal = () => {
-        setNewAppointmentModalOpen(true);
-    };
-    const handleCloseNewAppointmentModal = () => {
-        setNewAppointmentModalOpen(false);
-         setNewAppointment({
-            title: "",
-            date: new Date(),
-            time: "10:00",
-            patientId: "",
-        });
-    };
-    const handleNewAppointmentChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
+  const handleAddNewAppointment = () => {
+    setAppointments([...appointments, { ...newAppointment, id: String(Math.random()) }])
+    handleCloseNewAppointmentModal()
+  }
 
-        if(name === "date"){
-            setNewAppointment({
-                ...newAppointment,
-                date: new Date(value)
-            })
-            return;
-        }
-        setNewAppointment({
-          ...newAppointment,
-          [name]: value,
-        });
-    };
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value)
+  }
 
-    const handleAddNewAppointment = () => {
-        setAppointments([...appointments, {...newAppointment, id: String(Math.random())}]);
-        handleCloseNewAppointmentModal()
-    };
+  const filteredPatients = patients.filter(
+    (patient) => patient.name.toLowerCase().includes(searchQuery.toLowerCase()) || patient.id.includes(searchQuery),
+  )
 
-    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchQuery(e.target.value);
-    };
+  const handleOpenAddPatientModal = () => {
+    setIsAddPatientModalOpen(true)
+  }
 
-    const filteredPatients = patients.filter(patient =>
-        patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        patient.id.includes(searchQuery)
-    );
+  const handleCloseAddPatientModal = () => {
+    setIsAddPatientModalOpen(false)
+    setNewPatient({
+      name: "",
+      phone: "",
+      email: "",
+      address: "",
+      dob: "",
+      sex: "",
+      raceEthnicity: "",
+      preferredLanguage: "",
+      notes: "",
+      treatment: "",
+      billing: "",
+    })
+  }
 
-     const handleOpenAddPatientModal = () => {
-        setIsAddPatientModalOpen(true);
-    };
+  const handleNewPatientChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setNewPatient({
+      ...newPatient,
+      [name]: value,
+    })
+  }
 
-    const handleCloseAddPatientModal = () => {
-         setIsAddPatientModalOpen(false);
-          setNewPatient({
-              name: "",
-             phone: "",
-             email: "",
-             address: "",
-             dob: "",
-             notes: "",
-             medicalHistory: "",
-             treatment: "",
-             billing: "",
-         });
-    };
+  const handleAddNewPatient = () => {
+    setPatients([...patients, { ...newPatient, id: generatePatientId(), medicalHistory: [] }])
+    handleCloseAddPatientModal()
+  }
 
-    const handleNewPatientChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-         setNewPatient({
-          ...newPatient,
-          [name]: value,
-        });
-    }
-    
-    const handleAddNewPatient = () => {
-          setPatients([...patients, {...newPatient, id: generatePatientId()}]);
-          handleCloseAddPatientModal();
+  const handleEventClick = (appointment: Appointment) => {
+    setSelectedEvent(appointment)
+    setIsEventModalOpen(true)
+  }
+
+  const handleCloseEventModal = () => {
+    setIsEventModalOpen(false)
+    setSelectedEvent(null)
+  }
+
+  const handleDragStart = (e: React.DragEvent, appointment: Appointment) => {
+    e.dataTransfer.setData("appointmentId", appointment.id)
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+  }
+
+  const handleDrop = (e: React.DragEvent, date: Date) => {
+    e.preventDefault()
+    const appointmentId = e.dataTransfer.getData("appointmentId")
+    const updatedAppointments = appointments.map((app) => {
+      if (app.id === appointmentId) {
+        return { ...app, date: date }
       }
+      return app
+    })
+    setAppointments(updatedAppointments)
+  }
 
-    const handleEventClick = (appointment: Appointment) => {
-        setSelectedEvent(appointment);
-        setIsEventModalOpen(true);
-    };
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab)
+  }
 
-    const handleCloseEventModal = () => {
-        setIsEventModalOpen(false);
-        setSelectedEvent(null);
-    };
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen)
+  }
 
-    const handleDragStart = (e: React.DragEvent, appointment: Appointment) => {
-        e.dataTransfer.setData('appointmentId', appointment.id);
-    };
+  const handleEditEventClick = (appointment: Appointment) => {
+    setEditEvent(appointment)
+    setIsEditEventModalOpen(true)
+  }
 
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-    };
+  const handleCloseEditEventModal = () => {
+    setIsEditEventModalOpen(false)
+    setEditEvent(null)
+  }
 
-    const handleDrop = (e: React.DragEvent, date: Date) => {
-        e.preventDefault();
-        const appointmentId = e.dataTransfer.getData('appointmentId');
-        const updatedAppointments = appointments.map(app => {
-            if (app.id === appointmentId) {
-                return { ...app, date: date };
-            }
-            return app;
-        });
-        setAppointments(updatedAppointments);
-    };
+  const handleEditEventChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if (!editEvent) return
 
-    const handleTabChange = (tab: string) => {
-        setActiveTab(tab);
-    };
+    const { name, value } = e.target
 
-     const toggleMenu = () => {
-        setIsMenuOpen(!isMenuOpen);
-    };
-
-     const handleEditEventClick = (appointment: Appointment) => {
-        setEditEvent(appointment);
-        setIsEditEventModalOpen(true);
-    };
-
-    const handleCloseEditEventModal = () => {
-        setIsEditEventModalOpen(false);
-        setEditEvent(null);
-    };
-
-     const handleEditEventChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        if(!editEvent) return;
-
-        const { name, value } = e.target;
-        
-        if(name === "date"){
-            setEditEvent({
-                ...editEvent,
-                date: new Date(value)
-            })
-            return;
-        }
-        setEditEvent({
-          ...editEvent,
-          [name]: value,
-        });
-    };
-
-    const handleUpdateEvent = () => {
-        if(!editEvent) return;
-        
-        const updatedAppointments = appointments.map(app => {
-            if (app.id === editEvent.id) {
-                return editEvent;
-            }
-            return app;
-        });
-        setAppointments(updatedAppointments);
-        handleCloseEditEventModal();
-    };
-    
-    const renderMonthView = () => {
-        const days = daysInMonth(currentDate);
-        const firstDay = firstDayOfMonth(currentDate);
-        const dayArray = [];
-    
-        for(let i = 0; i < firstDay; i++) {
-            dayArray.push(null);
-        }
-        for (let i = 1; i <= days; i++) {
-            dayArray.push(i);
-        }
-    
-        return (
-          <div className="grid grid-cols-7 gap-2 p-2">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                  <div key={day} className="text-gray-400 font-semibold text-center">{day}</div>
-                ))}
-            {dayArray.map((day, index) => {
-                if(day === null) {
-                  return <div key={index} className="p-2 h-24 bg-gray-700 border-2 border-gray-900 rounded-lg"></div>
-                }
-                const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-                const dayAppointments = appointments.filter(app => app.date.toDateString() === date.toDateString())
-                return (
-                    <div key={index} 
-                         className={`p-2 h-24 bg-gray-700 border-2 border-gray-900 rounded-lg ${day === currentDate.getDate() && currentDate.getMonth() === new Date().getMonth() && currentDate.getFullYear() === new Date().getFullYear() ? 'border-blue-500' : '' }`}
-                         onDragOver={handleDragOver}
-                         onDrop={(e) => handleDrop(e, date)}
-                    >
-                        <span className="text-white font-semibold">{day}</span>
-                        {dayAppointments.map(app => (
-                            <div 
-                             key={app.id}
-                             className="mt-1 p-1 rounded-md text-xs bg-blue-900 cursor-pointer"
-                             onClick={() => handleEventClick(app)}
-                             draggable
-                             onDragStart={(e) => handleDragStart(e, app)}
-                             >
-                                {app.title}
-                            </div>
-                        ))}
-                    </div>
-                )
-            })}
-          </div>
-        )
-    };
-
-    const renderWeekView = () => {
-        const weekDays = daysInWeek(currentDate);
-        
-        return (
-            <div className="grid grid-cols-7 gap-2 p-2">
-              {weekDays.map((day) => {
-                const dayAppointments = appointments.filter(app => app.date.toDateString() === day.toDateString())
-                return (
-                    <div 
-                        key={day.getTime()} 
-                        className={`p-2 h-48 bg-gray-700 border-2 border-gray-900 rounded-lg ${day.toDateString() === currentDate.toDateString() ? 'border-blue-500' : '' }`}
-                        onDragOver={handleDragOver}
-                        onDrop={(e) => handleDrop(e, day)}
-                    >
-                      <span className="text-white font-semibold">{day.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })}</span>
-                      {dayAppointments.map(app => (
-                            <div 
-                                key={app.id}
-                                className="mt-1 p-1 rounded-md text-xs bg-blue-900 cursor-pointer"
-                                onClick={() => handleEventClick(app)}
-                                draggable
-                                onDragStart={(e) => handleDragStart(e, app)}
-                            >
-                                {app.title}
-                            </div>
-                        ))}
-                    </div>
-                )
-              })}
-            </div>
-          );
-    };
-
-    const renderDayView = () => {
-      const dayAppointments = appointments.filter(app => app.date.toDateString() === currentDate.toDateString())
-      return(
-        <div className='p-2 h-96 bg-gray-700 border-2 border-gray-900 rounded-lg'
-            onDragOver={handleDragOver}
-            onDrop={(e) => handleDrop(e, currentDate)}
-        >
-            <div className="text-white font-semibold text-xl pb-4">{currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</div>
-                {dayAppointments.map(app => (
-                  <div 
-                      key={app.id} 
-                      className="mt-1 p-1 rounded-md text-sm bg-blue-900 cursor-pointer"
-                      onClick={() => handleEventClick(app)}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, app)}
-                    >
-                        {app.title} - {app.time}
-                   </div>
-                  ))}
-        </div>
-      )
+    if (name === "date") {
+      setEditEvent({
+        ...editEvent,
+        date: new Date(value),
+      })
+      return
     }
+    setEditEvent({
+      ...editEvent,
+      [name]: value,
+    })
+  }
 
+  const handleUpdateEvent = () => {
+    if (!editEvent) return
+
+    const updatedAppointments = appointments.map((app) => {
+      if (app.id === editEvent.id) {
+        return editEvent
+      }
+      return app
+    })
+    setAppointments(updatedAppointments)
+    handleCloseEditEventModal()
+  }
+
+  const renderMonthView = () => {
+    const days = daysInMonth(currentDate)
+    const firstDay = firstDayOfMonth(currentDate)
+    const dayArray = []
+
+    for (let i = 0; i < firstDay; i++) {
+      dayArray.push(null)
+    }
+    for (let i = 1; i <= days; i++) {
+      dayArray.push(i)
+    }
 
     return (
-        <div className="bg-gray-900 min-h-screen text-white">
-             <nav className="bg-gray-800 p-4 flex items-center justify-between">
-                <div className="relative">
-                    <button onClick={toggleMenu} className="text-xl focus:outline-none">
-                        ☰
-                    </button>
-                    {isMenuOpen && (
-                        <div className="absolute left-0 mt-2 w-48 bg-gray-700 rounded-md shadow-lg z-10">
-                            <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-600">Home</a>
-                            <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-600">Patients</a>
-                            <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-600">Account</a>
-                            <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-600">Help</a>
-                             <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-600">Log Out</a>
-                        </div>
-                    )}
+      <div className="grid grid-cols-7 gap-2 p-2">
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+          <div key={day} className="text-gray-400 font-semibold text-center">
+            {day}
+          </div>
+        ))}
+        {dayArray.map((day, index) => {
+          if (day === null) {
+            return <div key={index} className="p-2 h-24 bg-gray-700 border-2 border-gray-900 rounded-lg"></div>
+          }
+          const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+          const dayAppointments = appointments.filter((app) => app.date.toDateString() === date.toDateString())
+          return (
+            <div
+              key={index}
+              className={`p-2 h-24 bg-gray-700 border-2 border-gray-900 rounded-lg ${day === currentDate.getDate() && currentDate.getMonth() === new Date().getMonth() && currentDate.getFullYear() === new Date().getFullYear() ? "border-blue-500" : ""}`}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, date)}
+            >
+              <span className="text-white font-semibold">{day}</span>
+              {dayAppointments.map((app) => (
+                <div
+                  key={app.id}
+                  className="mt-1 p-1 rounded-md text-xs bg-blue-900 cursor-pointer"
+                  onClick={() => handleEventClick(app)}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, app)}
+                >
+                  {app.title}
                 </div>
-                <div className="text-2xl font-bold">
-                    {view === "month" ? currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-                        : view === "week" ?  `${daysInWeek(currentDate)[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${daysInWeek(currentDate)[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-                            : currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
-                    }
-                </div>
-                <div className="flex items-center gap-2">
-                    <button onClick={handleOpenNewAppointmentModal} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
-                        Add Appointment
-                    </button>
-                </div>
-            </nav>
-             
-            <div className="p-4 flex items-center justify-between">
-                 <div className="flex gap-2">
-                   {view === "month" ?
-                      <>
-                      <button onClick={previousMonth} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&lt;</button>
-                      <button onClick={nextMonth} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&gt;</button>
-                      </>
-                       : view === "week" ?
-                       <>
-                        <button onClick={previousWeek} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&lt;</button>
-                        <button onClick={nextWeek} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&gt;</button>
-                        </>
-                       :
-                        <>
-                        <button onClick={previousDay} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&lt;</button>
-                        <button onClick={nextDay} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">&gt;</button>
-                        </>
-                    }
-                 </div>
-                <div className="flex gap-2">
-                    <button onClick={() => handleViewChange('month')} className={`px-3 py-1 rounded ${view === 'month' ? 'bg-blue-500' : 'bg-gray-800 hover:bg-gray-700'}`}>Month</button>
-                    <button onClick={() => handleViewChange('week')} className={`px-3 py-1 rounded ${view === 'week' ? 'bg-blue-500' : 'bg-gray-800 hover:bg-gray-700'}`}>Week</button>
-                    <button onClick={() => handleViewChange('day')} className={`px-3 py-1 rounded ${view === 'day' ? 'bg-blue-500' : 'bg-gray-800 hover:bg-gray-700'}`}>Day</button>
-                </div>
+              ))}
             </div>
-            <div className="p-4">
-                {view === 'month' && renderMonthView()}
-                {view === 'week' && renderWeekView()}
-                {view === 'day' && renderDayView()}
+          )
+        })}
+      </div>
+    )
+  }
+
+  const renderWeekView = () => {
+    const weekDays = daysInWeek(currentDate)
+
+    return (
+      <div className="grid grid-cols-7 gap-2 p-2">
+        {weekDays.map((day) => {
+          const dayAppointments = appointments.filter((app) => app.date.toDateString() === day.toDateString())
+          return (
+            <div
+              key={day.getTime()}
+              className={`p-2 h-48 bg-gray-700 border-2 border-gray-900 rounded-lg ${day.toDateString() === currentDate.toDateString() ? "border-blue-500" : ""}`}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, day)}
+            >
+              <span className="text-white font-semibold">
+                {day.toLocaleDateString("en-US", { weekday: "short", day: "numeric" })}
+              </span>
+              {dayAppointments.map((app) => (
+                <div
+                  key={app.id}
+                  className="mt-1 p-1 rounded-md text-xs bg-blue-900 cursor-pointer"
+                  onClick={() => handleEventClick(app)}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, app)}
+                >
+                  {app.title}
+                </div>
+              ))}
             </div>
+          )
+        })}
+      </div>
+    )
+  }
 
-            <div className="p-4">
-                 <div className="flex items-center mb-4 justify-between">
-                     <h2 className="text-xl font-semibold mr-4">Patient List</h2>
-                     <div className="flex items-center gap-2">
-                        <input
-                            type="text"
-                            placeholder="Search patients..."
-                            value={searchQuery}
-                            onChange={handleSearchChange}
-                             className="bg-gray-700 p-2 rounded text-black w-auto"
-                         />
-                         <button onClick={handleOpenAddPatientModal} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
-                              Add Patient
-                         </button>
-                      </div>
-                </div>
-                
-                <div className="overflow-x-auto">
-                <table className="min-w-full bg-gray-800 rounded-lg">
-                    <thead>
-                        <tr className="text-gray-400">
-                            <th className="px-4 py-2 text-left">ID</th>
-                            <th className="px-4 py-2 text-left">Name</th>
-                            <th className="px-4 py-2 text-left">Phone</th>
-                            <th className="px-4 py-2 text-left">Email</th>
-                            <th className="px-4 py-2 text-left">Address</th>
-                            <th className="px-4 py-2 text-left">DOB</th>
-                            <th className="px-4 py-2 text-left">Notes</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {filteredPatients.map(patient => (
-                            <tr key={patient.id} className="border-t border-gray-700 hover:bg-gray-700 cursor-pointer">
-                                <td className="px-4 py-2 text-blue-400" onClick={() => handlePatientClick(patient.id)}>{patient.id}</td>
-                                <td className="px-4 py-2">{patient.name}</td>
-                                <td className="px-4 py-2">{patient.phone}</td>
-                                <td className="px-4 py-2">{patient.email}</td>
-                                <td className="px-4 py-2">{patient.address}</td>
-                                <td className="px-4 py-2">{patient.dob}</td>
-                                <td className="px-4 py-2">{patient.notes}</td>
-                            </tr>
-                    ))}
-                </tbody>
-                </table>
-                </div>
-
-            </div>
-
-            {isModalOpen && selectedPatient && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-screen max-w-2xl h-screen max-h-[80vh] overflow-auto relative">
-                         <button onClick={handleCloseModal} className="absolute top-4 right-4 bg-gray-700 hover:bg-gray-600 text-white p-2 rounded">X</button>
-                        <h2 className="text-xl font-semibold mb-4">{selectedPatient.name}</h2>
-                        <div className="flex border-b border-gray-700 mb-4">
-                          <button
-                              onClick={() => handleTabChange('Demographics')}
-                              className={`px-4 py-2 rounded-t-md ${activeTab === 'Demographics' ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-400'}`}
-                          >
-                              Demographics
-                          </button>
-                          <button
-                              onClick={() => handleTabChange('Medical History')}
-                              className={`px-4 py-2 rounded-t-md ${activeTab === 'Medical History' ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-400'}`}
-                          >
-                              Medical History
-                          </button>
-                          <button
-                              onClick={() => handleTabChange('Treatment')}
-                              className={`px-4 py-2 rounded-t-md ${activeTab === 'Treatment' ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-400'}`}
-                          >
-                              Treatment
-                          </button>
-                          <button
-                              onClick={() => handleTabChange('Billing')}
-                              className={`px-4 py-2 rounded-t-md ${activeTab === 'Billing' ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-400'}`}
-                          >
-                              Billing
-                          </button>
-                      </div>
-                         {activeTab === 'Demographics' && (
-                            <div>
-                                <p className="mb-2"><strong>Phone:</strong> {selectedPatient.phone}</p>
-                                <p className="mb-2"><strong>Email:</strong> {selectedPatient.email}</p>
-                                <p className="mb-2"><strong>Address:</strong> {selectedPatient.address}</p>
-                                <p className="mb-2"><strong>Date of Birth:</strong> {selectedPatient.dob}</p>
-                                <p className="mb-4"><strong>Notes:</strong> {selectedPatient.notes}</p>
-                            </div>
-                         )}
-                        {activeTab === 'Medical History' && (
-                             <div>
-                                <p className="mb-4"><strong>Medical History:</strong> {selectedPatient.medicalHistory}</p>
-                             </div>
-                        )}
-                        {activeTab === 'Treatment' && (
-                           <div>
-                             <p className="mb-4"><strong>Treatment:</strong> {selectedPatient.treatment}</p>
-                           </div>
-                        )}
-                        {activeTab === 'Billing' && (
-                            <div>
-                                <p className="mb-4"><strong>Billing:</strong> {selectedPatient.billing}</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-             {isAddPatientModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
-                        <h2 className="text-xl font-semibold mb-4">Add New Patient</h2>
-                         <input
-                            type="text"
-                            name="name"
-                            placeholder="Name"
-                            value={newPatient.name}
-                            onChange={handleNewPatientChange}
-                            className="w-full p-2 mb-2 text-black rounded"
-                        />
-                        <input
-                            type="text"
-                            name="phone"
-                             placeholder="Phone"
-                            value={newPatient.phone}
-                            onChange={handleNewPatientChange}
-                            className="w-full p-2 mb-2 text-black rounded"
-                        />
-                         <input
-                            type="email"
-                            name="email"
-                             placeholder="Email"
-                            value={newPatient.email}
-                            onChange={handleNewPatientChange}
-                            className="w-full p-2 mb-2 text-black rounded"
-                        />
-                         <input
-                            type="text"
-                            name="address"
-                             placeholder="Address"
-                            value={newPatient.address}
-                            onChange={handleNewPatientChange}
-                            className="w-full p-2 mb-2 text-black rounded"
-                        />
-                          <input
-                            type="text"
-                             name="dob"
-                             placeholder="Date of Birth"
-                            value={newPatient.dob}
-                             onChange={handleNewPatientChange}
-                            className="w-full p-2 mb-2 text-black rounded"
-                        />
-                         <input
-                            type="text"
-                            name="notes"
-                            placeholder="Notes"
-                            value={newPatient.notes}
-                            onChange={handleNewPatientChange}
-                            className="w-full p-2 mb-2 text-black rounded"
-                        />
-                         <input
-                            type="text"
-                            name="medicalHistory"
-                            placeholder="Medical History"
-                            value={newPatient.medicalHistory}
-                             onChange={handleNewPatientChange}
-                            className="w-full p-2 mb-2 text-black rounded"
-                        />
-                         <input
-                            type="text"
-                            name="treatment"
-                            placeholder="Treatment"
-                            value={newPatient.treatment}
-                             onChange={handleNewPatientChange}
-                            className="w-full p-2 mb-2 text-black rounded"
-                        />
-                         <input
-                             type="text"
-                            name="billing"
-                            placeholder="Billing"
-                            value={newPatient.billing}
-                             onChange={handleNewPatientChange}
-                            className="w-full p-2 mb-2 text-black rounded"
-                         />
-                        <div className="flex justify-end gap-2">
-                             <button onClick={handleCloseAddPatientModal} className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded">Cancel</button>
-                            <button onClick={handleAddNewPatient} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">Add</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {isEventModalOpen && selectedEvent && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
-                        <h2 className="text-xl font-semibold mb-4">{selectedEvent.title}</h2>
-                        <p className="mb-2"><strong>Date:</strong> {selectedEvent.date.toLocaleDateString()}</p>
-                        <p className="mb-2"><strong>Time:</strong> {selectedEvent.time}</p>
-                         <p className="mb-2"><strong>Patient ID:</strong> {selectedEvent.patientId}</p>
-                        <div className="flex justify-end gap-2">
-                              <button onClick={() => handleEditEventClick(selectedEvent)} className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded">Edit Details</button>
-                            <button onClick={handleCloseEventModal} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">Close</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-            
-             {isEditEventModalOpen && editEvent && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
-                         <h2 className="text-xl font-semibold mb-4">Edit Appointment</h2>
-                        <input
-                            type="text"
-                            name="title"
-                            placeholder="Title"
-                            value={editEvent.title}
-                            onChange={handleEditEventChange}
-                             className="w-full p-2 mb-2 text-black rounded"
-                        />
-                          <input
-                            type="date"
-                             name="date"
-                             value={editEvent.date.toISOString().split('T')[0]}
-                             onChange={handleEditEventChange}
-                            className="w-full p-2 mb-2 text-black rounded"
-                        />
-                         <input
-                            type="time"
-                            name="time"
-                             value={editEvent.time}
-                            onChange={handleEditEventChange}
-                             className="w-full p-2 mb-2 text-black rounded"
-                        />
-                          <select
-                             name="patientId"
-                             value={editEvent.patientId}
-                             onChange={handleEditEventChange}
-                             className="w-full p-2 mb-2 text-black rounded"
-                           >
-                              <option value="">Select Patient</option>
-                             {patients.map(patient => (
-                                <option key={patient.id} value={patient.id}>
-                                  {patient.name}
-                                </option>
-                             ))}
-                            </select>
-                         <div className="flex justify-end gap-2">
-                             <button onClick={handleCloseEditEventModal} className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded">Cancel</button>
-                            <button onClick={handleUpdateEvent} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">Update</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-
-            {newAppointmentModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
-                        <h2 className="text-xl font-semibold mb-4">Add New Appointment</h2>
-                        <input
-                            type="text"
-                            name="title"
-                            placeholder="Title"
-                            value={newAppointment.title}
-                            onChange={handleNewAppointmentChange}
-                            className="w-full p-2 mb-2 text-black rounded"
-                        />
-                          <input
-                            type="date"
-                            name="date"
-                            value={newAppointment.date.toISOString().split('T')[0]}
-                            onChange={handleNewAppointmentChange}
-                            className="w-full p-2 mb-2 text-black rounded"
-                        />
-                         <input
-                            type="time"
-                             name="time"
-                             value={newAppointment.time}
-                            onChange={handleNewAppointmentChange}
-                            className="w-full p-2 mb-2 text-black rounded"
-                        />
-                        
-                         <select
-                             name="patientId"
-                             value={newAppointment.patientId}
-                             onChange={handleNewAppointmentChange}
-                             className="w-full p-2 mb-2 text-black rounded"
-                           >
-                              <option value="">Select Patient</option>
-                             {patients.map(patient => (
-                                <option key={patient.id} value={patient.id}>
-                                  {patient.name}
-                                </option>
-                             ))}
-                            </select>
-                        <div className="flex justify-end gap-2">
-                            <button onClick={handleCloseNewAppointmentModal} className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded">Cancel</button>
-                            <button onClick={handleAddNewAppointment} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">Add</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+  const renderDayView = () => {
+    const dayAppointments = appointments.filter((app) => app.date.toDateString() === currentDate.toDateString())
+    return (
+      <div
+        className="p-2 h-96 bg-gray-700 border-2 border-gray-900 rounded-lg"
+        onDragOver={handleDragOver}
+        onDrop={(e) => handleDrop(e, currentDate)}
+      >
+        <div className="text-white font-semibold text-xl pb-4">
+          {currentDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
         </div>
-    );
-};
+        {dayAppointments.map((app) => (
+          <div
+            key={app.id}
+            className="mt-1 p-1 rounded-md text-sm bg-blue-900 cursor-pointer"
+            onClick={() => handleEventClick(app)}
+            draggable
+            onDragStart={(e) => handleDragStart(e, app)}
+          >
+            {app.title} - {app.time}
+          </div>
+        ))}
+      </div>
+    )
+  }
 
-export default CalendarApp;
+  const handleAddMedicalHistoryEntry = () => {
+    if (selectedPatient) {
+      const newEntry: MedicalHistoryEntry = {
+        ...newMedicalHistoryEntry,
+        id: Date.now().toString(),
+      }
+      const updatedPatient = {
+        ...selectedPatient,
+        medicalHistory: [...selectedPatient.medicalHistory, newEntry],
+      }
+      setPatients(patients.map((p) => (p.id === selectedPatient.id ? updatedPatient : p)))
+      setSelectedPatient(updatedPatient)
+      setNewMedicalHistoryEntry({ date: "", condition: "", notes: "" })
+    }
+  }
+
+  const handleEditMedicalHistoryEntry = (entry: MedicalHistoryEntry) => {
+    setEditingMedicalHistoryId(entry.id)
+    setNewMedicalHistoryEntry(entry)
+  }
+
+  const handleUpdateMedicalHistoryEntry = () => {
+    if (selectedPatient && editingMedicalHistoryId) {
+      const updatedEntries = selectedPatient.medicalHistory.map((entry) =>
+        entry.id === editingMedicalHistoryId ? { ...newMedicalHistoryEntry, id: entry.id } : entry,
+      )
+      const updatedPatient = {
+        ...selectedPatient,
+        medicalHistory: updatedEntries,
+      }
+      setPatients(patients.map((p) => (p.id === selectedPatient.id ? updatedPatient : p)))
+      setSelectedPatient(updatedPatient)
+      setEditingMedicalHistoryId(null)
+      setNewMedicalHistoryEntry({ date: "", condition: "", notes: "" })
+    }
+  }
+
+  const handleDeleteMedicalHistoryEntry = (id: string) => {
+    if (selectedPatient) {
+      const updatedEntries = selectedPatient.medicalHistory.filter((entry) => entry.id !== id)
+      const updatedPatient = {
+        ...selectedPatient,
+        medicalHistory: updatedEntries,
+      }
+      setPatients(patients.map((p) => (p.id === selectedPatient.id ? updatedPatient : p)))
+      setSelectedPatient(updatedPatient)
+    }
+  }
+
+  return (
+    <div className="bg-gray-900 min-h-screen text-white">
+      <nav className="bg-gray-800 p-4 flex items-center justify-between">
+        <div className="relative">
+          <button onClick={toggleMenu} className="text-xl focus:outline-none">
+            ☰
+          </button>
+          {isMenuOpen && (
+            <div className="absolute left-0 mt-2 w-48 bg-gray-700 rounded-md shadow-lg z-10">
+              <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-600">
+                Home
+              </a>
+              <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-600">
+                Patients
+              </a>
+              <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-600">
+                Account
+              </a>
+              <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-600">
+                Help
+              </a>
+              <a href="#" className="block px-4 py-2 text-gray-300 hover:bg-gray-600">
+                Log Out
+              </a>
+            </div>
+          )}
+        </div>
+        <div className="text-2xl font-bold">
+          {view === "month"
+            ? currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })
+            : view === "week"
+              ? `${daysInWeek(currentDate)[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${daysInWeek(
+                  currentDate,
+                )[6].toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                })}`
+              : currentDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleOpenNewAppointmentModal}
+            className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+          >
+            Add Appointment
+          </button>
+        </div>
+      </nav>
+
+      <div className="p-4 flex items-center justify-between">
+        <div className="flex gap-2">
+          {view === "month" ? (
+            <>
+              <button onClick={previousMonth} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">
+                &lt;
+              </button>
+              <button onClick={nextMonth} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">
+                &gt;
+              </button>
+            </>
+          ) : view === "week" ? (
+            <>
+              <button onClick={previousWeek} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">
+                &lt;
+              </button>
+              <button onClick={nextWeek} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">
+                &gt;
+              </button>
+            </>
+          ) : (
+            <>
+              <button onClick={previousDay} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">
+                &lt;
+              </button>
+              <button onClick={nextDay} className="bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded">
+                &gt;
+              </button>
+            </>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleViewChange("month")}
+            className={`px-3 py-1 rounded ${view === "month" ? "bg-blue-500" : "bg-gray-800 hover:bg-gray-700"}`}
+          >
+            Month
+          </button>
+          <button
+            onClick={() => handleViewChange("week")}
+            className={`px-3 py-1 rounded ${view === "week" ? "bg-blue-500" : "bg-gray-800 hover:bg-gray-700"}`}
+          >
+            Week
+          </button>
+          <button
+            onClick={() => handleViewChange("day")}
+            className={`px-3 py-1 rounded ${view === "day" ? "bg-blue-500" : "bg-gray-800 hover:bg-gray-700"}`}
+          >
+            Day
+          </button>
+        </div>
+      </div>
+      <div className="p-4">
+        {view === "month" && renderMonthView()}
+        {view === "week" && renderWeekView()}
+        {view === "day" && renderDayView()}
+      </div>
+
+      <div className="p-4">
+        <div className="flex items-center mb-4 justify-between">
+          <h2 className="text-xl font-semibold mr-4">Patient List</h2>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Search patients..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="bg-gray-700 p-2 rounded text-black w-auto"
+            />
+            <button
+              onClick={handleOpenAddPatientModal}
+              className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+            >
+              Add Patient
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-gray-800 rounded-lg">
+            <thead>
+              <tr className="text-gray-400">
+                <th className="px-4 py-2 text-left">ID</th>
+                <th className="px-4 py-2 text-left">Name</th>
+                <th className="px-4 py-2 text-left">Phone</th>
+                <th className="px-4 py-2 text-left">Email</th>
+                <th className="px-4 py-2 text-left">Address</th>
+                <th className="px-4 py-2 text-left">DOB</th>
+                <th className="px-4 py-2 text-left">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredPatients.map((patient) => (
+                <tr key={patient.id} className="border-t border-gray-700 hover:bg-gray-700 cursor-pointer">
+                  <td className="px-4 py-2 text-blue-400" onClick={() => handlePatientClick(patient.id)}>
+                    {patient.id}
+                  </td>
+                  <td className="px-4 py-2">{patient.name}</td>
+                  <td className="px-4 py-2">{patient.phone}</td>
+                  <td className="px-4 py-2">{patient.email}</td>
+                  <td className="px-4 py-2">{patient.address}</td>
+                  <td className="px-4 py-2">{patient.dob}</td>
+                  <td className="px-4 py-2">{patient.notes}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {isModalOpen && selectedPatient && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-screen max-w-2xl h-screen max-h-[80vh] overflow-auto relative">
+            <button
+              onClick={handleCloseModal}
+              className="absolute top-4 right-4 bg-gray-700 hover:bg-gray-600 text-white p-2 rounded"
+            >
+              X
+            </button>
+            <h2 className="text-xl font-semibold mb-4">{selectedPatient.name}</h2>
+            <div className="flex border-b border-gray-700 mb-4">
+              <button
+                onClick={() => handleTabChange("Demographics")}
+                className={`px-4 py-2 rounded-t-md ${activeTab === "Demographics" ? "bg-blue-500 text-white" : "bg-gray-700 text-gray-400"}`}
+              >
+                Demographics
+              </button>
+              <button
+                onClick={() => handleTabChange("Medical History")}
+                className={`px-4 py-2 rounded-t-md ${activeTab === "Medical History" ? "bg-blue-500 text-white" : "bg-gray-700 text-gray-400"}`}
+              >
+                Medical History
+              </button>
+              <button
+                onClick={() => handleTabChange("Treatment")}
+                className={`px-4 py-2 rounded-t-md ${activeTab === "Treatment" ? "bg-blue-500 text-white" : "bg-gray-700 text-gray-400"}`}
+              >
+                Treatment
+              </button>
+              <button
+                onClick={() => handleTabChange("Billing")}
+                className={`px-4 py-2 rounded-t-md ${activeTab === "Billing" ? "bg-blue-500 text-white" : "bg-gray-700 text-gray-400"}`}
+              >
+                Billing
+              </button>
+            </div>
+            {activeTab === "Demographics" && (
+              <div>
+                <p className="mb-2">
+                  <strong>Name:</strong> {selectedPatient.name}
+                </p>
+                <p className="mb-2">
+                  <strong>Date of Birth (DOB):</strong> {selectedPatient.dob}
+                </p>
+                <p className="mb-2">
+                  <strong>Sex:</strong> {selectedPatient.sex || "Not specified"}
+                </p>
+                <p className="mb-2">
+                  <strong>Race/Ethnicity:</strong> {selectedPatient.raceEthnicity || "Not specified"}
+                </p>
+                <p className="mb-2">
+                  <strong>Address:</strong> {selectedPatient.address}
+                </p>
+                <p className="mb-2">
+                  <strong>Phone Number:</strong> {selectedPatient.phone}
+                </p>
+                <p className="mb-2">
+                  <strong>Email Address:</strong> {selectedPatient.email}
+                </p>
+                <p className="mb-2">
+                  <strong>Preferred Language:</strong> {selectedPatient.preferredLanguage || "Not specified"}
+                </p>
+                <p className="mb-4">
+                  <strong>Notes:</strong> {selectedPatient.notes}
+                </p>
+              </div>
+            )}
+            {activeTab === "Medical History" && (
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Medical History</h3>
+                <table className="w-full mb-4">
+                  <thead>
+                    <tr className="bg-gray-700">
+                      <th className="p-2 text-left">Date</th>
+                      <th className="p-2 text-left">Condition</th>
+                      <th className="p-2 text-left">Notes</th>
+                      <th className="p-2 text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedPatient.medicalHistory.map((entry) => (
+                      <tr key={entry.id} className="border-t border-gray-600">
+                        <td className="p-2">{entry.date}</td>
+                        <td className="p-2">{entry.condition}</td>
+                        <td className="p-2">{entry.notes}</td>
+                        <td className="p-2">
+                          <button
+                            onClick={() => handleEditMedicalHistoryEntry(entry)}
+                            className="mr-2 text-blue-400 hover:text-blue-300"
+                            aria-label={`Edit ${entry.condition}`}
+                          >
+                            <PencilIcon className="h-5 w-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMedicalHistoryEntry(entry.id)}
+                            className="text-red-400 hover:text-red-300"
+                            aria-label={`Delete ${entry.condition}`}
+                          >
+                            <TrashIcon className="h-5 w-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="mb-4">
+                  <h4 className="text-md font-semibold mb-2">
+                    {editingMedicalHistoryId ? "Edit Entry" : "Add New Entry"}
+                  </h4>
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      type="date"
+                      value={newMedicalHistoryEntry.date}
+                      onChange={(e) => setNewMedicalHistoryEntry({ ...newMedicalHistoryEntry, date: e.target.value })}
+                      className="p-2 bg-gray-700 rounded"
+                    />
+                    <input
+                      type="text"
+                      value={newMedicalHistoryEntry.condition}
+                      onChange={(e) =>
+                        setNewMedicalHistoryEntry({ ...newMedicalHistoryEntry, condition: e.target.value })
+                      }
+                      placeholder="Condition"
+                      className="p-2 bg-gray-700 rounded"
+                    />
+                  </div>
+                  <textarea
+                    value={newMedicalHistoryEntry.notes}
+                    onChange={(e) => setNewMedicalHistoryEntry({ ...newMedicalHistoryEntry, notes: e.target.value })}
+                    placeholder="Notes"
+                    className="w-full p-2 bg-gray-700 rounded mb-2"
+                  />
+                  <button
+                    onClick={editingMedicalHistoryId ? handleUpdateMedicalHistoryEntry : handleAddMedicalHistoryEntry}
+                    className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+                  >
+                    {editingMedicalHistoryId ? "Update Entry" : "Add Entry"}
+                  </button>
+                </div>
+              </div>
+            )}
+            {activeTab === "Treatment" && (
+              <div>
+                <p className="mb-4">
+                  <strong>Treatment:</strong> {selectedPatient.treatment}
+                </p>
+              </div>
+            )}
+            {activeTab === "Billing" && (
+              <div>
+                <p className="mb-4">
+                  <strong>Billing:</strong> {selectedPatient.billing}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {isAddPatientModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-xl font-semibold mb-4">Add New Patient</h2>
+            <input
+              type="text"
+              name="name"
+              placeholder="Name"
+              value={newPatient.name}
+              onChange={handleNewPatientChange}
+              className="w-full p-2 mb-2 text-black rounded"
+            />
+            <input
+              type="text"
+              name="phone"
+              placeholder="Phone"
+              value={newPatient.phone}
+              onChange={handleNewPatientChange}
+              className="w-full p-2 mb-2 text-black rounded"
+            />
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={newPatient.email}
+              onChange={handleNewPatientChange}
+              className="w-full p-2 mb-2 text-black rounded"
+            />
+            <input
+              type="text"
+              name="address"
+              placeholder="Address"
+              value={newPatient.address}
+              onChange={handleNewPatientChange}
+              className="wfull p-2 mb-2 text-black rounded"
+            />
+            <input
+              type="text"
+              name="dob"
+              placeholder="Date of Birth"
+              value={newPatient.dob}
+              onChange={handleNewPatientChange}
+              className="w-full p-2 mb-2 text-black rounded"
+            />
+            <input
+              type="text"
+              name="notes"
+              placeholder="Notes"
+              value={newPatient.notes}
+              onChange={handleNewPatientChange}
+              className="w-full p-2 mb-2 text-black rounded"
+            />
+            <input
+              type="text"
+              name="medicalHistory"
+              placeholder="Medical History"
+              value={newPatient.medicalHistory}
+              onChange={handleNewPatientChange}
+              className="w-full p-2 mb-2 text-black rounded"
+            />
+            <input
+              type="text"
+              name="treatment"
+              placeholder="Treatment"
+              value={newPatient.treatment}
+              onChange={handleNewPatientChange}
+              className="w-full p-2 mb-2 text-black rounded"
+            />
+            <input
+              type="text"
+              name="billing"
+              placeholder="Billing"
+              value={newPatient.billing}
+              onChange={handleNewPatientChange}
+              className="w-full p-2 mb-2 text-black rounded"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={handleCloseAddPatientModal}
+                className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddNewPatient}
+                className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isEventModalOpen && selectedEvent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-xl font-semibold mb-4">{selectedEvent.title}</h2>
+            <p className="mb-2">
+              <strong>Date:</strong> {selectedEvent.date.toLocaleDateString()}
+            </p>
+            <p className="mb-2">
+              <strong>Time:</strong> {selectedEvent.time}
+            </p>
+            <p className="mb-2">
+              <strong>Patient ID:</strong> {selectedEvent.patientId}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => handleEditEventClick(selectedEvent)}
+                className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded"
+              >
+                Edit Details
+              </button>
+              <button
+                onClick={handleCloseEventModal}
+                className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isEditEventModalOpen && editEvent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-xl font-semibold mb-4">Edit Appointment</h2>
+            <input
+              type="text"
+              name="title"
+              placeholder="Title"
+              value={editEvent.title}
+              onChange={handleEditEventChange}
+              className="w-full p-2 mb-2 text-black rounded"
+            />
+            <input
+              type="date"
+              name="date"
+              value={editEvent.date.toISOString().split("T")[0]}
+              onChange={handleEditEventChange}
+              className="w-full p-2 mb-2 text-black rounded"
+            />
+            <input
+              type="time"
+              name="time"
+              value={editEvent.time}
+              onChange={handleEditEventChange}
+              className="w-full p-2 mb-2 text-black rounded"
+            />
+            <select
+              name="patientId"
+              value={editEvent.patientId}
+              onChange={handleEditEventChange}
+              className="w-full p-2 mb-2 text-black rounded"
+            >
+              <option value="">Select Patient</option>
+              {patients.map((patient) => (
+                <option key={patient.id} value={patient.id}>
+                  {patient.name}
+                </option>
+              ))}
+            </select>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={handleCloseEditEventModal}
+                className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateEvent}
+                className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+              >
+                Update
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {newAppointmentModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-xl font-semibold mb-4">Add New Appointment</h2>
+            <input
+              type="text"
+              name="title"
+              placeholder="Title"
+              value={newAppointment.title}
+              onChange={handleNewAppointmentChange}
+              className="w-full p-2 mb-2 text-black rounded"
+            />
+            <input
+              type="date"
+              name="date"
+              value={newAppointment.date.toISOString().split("T")[0]}
+              onChange={handleNewAppointmentChange}
+              className="w-full p-2 mb-2 text-black rounded"
+            />
+            <input
+              type="time"
+              name="time"
+              value={newAppointment.time}
+              onChange={handleNewAppointmentChange}
+              className="w-full p-2 mb-2 text-black rounded"
+            />
+
+            <select
+              name="patientId"
+              value={newAppointment.patientId}
+              onChange={handleNewAppointmentChange}
+              className="w-full p-2 mb-2 text-black rounded"
+            >
+              <option value="">Select Patient</option>
+              {patients.map((patient) => (
+                <option key={patient.id} value={patient.id}>
+                  {patient.name}
+                </option>
+              ))}
+            </select>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={handleCloseNewAppointmentModal}
+                className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddNewAppointment}
+                className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default CalendarApp
+
+
