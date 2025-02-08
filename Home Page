@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline"
+import { PencilIcon, TrashIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline"
 
 type Appointment = {
   id: string
@@ -19,6 +19,34 @@ type MedicalHistoryEntry = {
   notes: string
 }
 
+type Diagnosis = {
+  id: string
+  icdCode: string
+  description: string
+}
+
+type Test = {
+  id: string
+  name: string
+  date: string
+}
+
+type Prescription = {
+  id: string
+  medication: string
+  dosage: string
+  frequency: string
+  route: string
+  refills: number
+}
+
+type Note = {
+  id: string
+  content: string
+  timestamp: string
+  author: string
+}
+
 type Patient = {
   id: string
   name: string
@@ -31,8 +59,14 @@ type Patient = {
   preferredLanguage?: string
   notes: string
   medicalHistory: MedicalHistoryEntry[]
-  treatment: string
+  treatment: {
+    diagnoses: Diagnosis[]
+    tests: Test[]
+    prescriptions: Prescription[]
+    notes: Note[]
+  }
   billing: string
+  preferredPharmacy?: string
 }
 
 const CalendarApp: React.FC = () => {
@@ -55,8 +89,14 @@ const CalendarApp: React.FC = () => {
         { id: "1", date: "2022-05-15", condition: "Hypertension", notes: "Prescribed medication" },
         { id: "2", date: "2023-01-10", condition: "Flu", notes: "Recovered after 1 week" },
       ],
-      treatment: "Routine checkup",
+      treatment: {
+        diagnoses: [],
+        tests: [],
+        prescriptions: [],
+        notes: [],
+      },
       billing: "Paid",
+      preferredPharmacy: "CVS Pharmacy",
     },
     {
       id: "234567",
@@ -67,7 +107,12 @@ const CalendarApp: React.FC = () => {
       dob: "1985-05-20",
       notes: "Follow up",
       medicalHistory: [],
-      treatment: "Follow up appointment",
+      treatment: {
+        diagnoses: [],
+        tests: [],
+        prescriptions: [],
+        notes: [],
+      },
       billing: "Pending",
     },
     {
@@ -79,7 +124,12 @@ const CalendarApp: React.FC = () => {
       dob: "1998-12-01",
       notes: "New patient",
       medicalHistory: [],
-      treatment: "Initial consultation",
+      treatment: {
+        diagnoses: [],
+        tests: [],
+        prescriptions: [],
+        notes: [],
+      },
       billing: "Unpaid",
     },
   ])
@@ -108,7 +158,12 @@ const CalendarApp: React.FC = () => {
     raceEthnicity: "",
     preferredLanguage: "",
     notes: "",
-    treatment: "",
+    treatment: {
+      diagnoses: [],
+      tests: [],
+      prescriptions: [],
+      notes: [],
+    },
     billing: "",
   })
   const [isEditEventModalOpen, setIsEditEventModalOpen] = useState(false)
@@ -119,6 +174,29 @@ const CalendarApp: React.FC = () => {
     notes: "",
   })
   const [editingMedicalHistoryId, setEditingMedicalHistoryId] = useState<string | null>(null)
+  const [icdCodes, setIcdCodes] = useState<{ code: string; description: string }[]>([
+    { code: "A00", description: "Cholera" },
+    { code: "B01", description: "Varicella [chickenpox]" },
+    { code: "C50", description: "Malignant neoplasm of breast" },
+  ])
+  const [newDiagnosis, setNewDiagnosis] = useState<Omit<Diagnosis, "id">>({
+    icdCode: "",
+    description: "",
+  })
+  const [newTest, setNewTest] = useState<Omit<Test, "id">>({
+    name: "",
+    date: "",
+  })
+  const [newPrescription, setNewPrescription] = useState<Omit<Prescription, "id">>({
+    medication: "",
+    dosage: "",
+    frequency: "",
+    route: "",
+    refills: 0,
+  })
+  const [newNote, setNewNote] = useState<Omit<Note, "id" | "timestamp" | "author">>({
+    content: "",
+  })
 
   const generatePatientId = () => {
     return String(Math.floor(100000 + Math.random() * 900000))
@@ -260,7 +338,12 @@ const CalendarApp: React.FC = () => {
       raceEthnicity: "",
       preferredLanguage: "",
       notes: "",
-      treatment: "",
+      treatment: {
+        diagnoses: [],
+        tests: [],
+        prescriptions: [],
+        notes: [],
+      },
       billing: "",
     })
   }
@@ -515,6 +598,77 @@ const CalendarApp: React.FC = () => {
       }
       setPatients(patients.map((p) => (p.id === selectedPatient.id ? updatedPatient : p)))
       setSelectedPatient(updatedPatient)
+    }
+  }
+
+  const handleAddDiagnosis = () => {
+    if (selectedPatient) {
+      const updatedPatient = {
+        ...selectedPatient,
+        treatment: {
+          ...selectedPatient.treatment,
+          diagnoses: [...selectedPatient.treatment.diagnoses, { ...newDiagnosis, id: Date.now().toString() }],
+        },
+      }
+      setPatients(patients.map((p) => (p.id === selectedPatient.id ? updatedPatient : p)))
+      setSelectedPatient(updatedPatient)
+      setNewDiagnosis({ icdCode: "", description: "" })
+    }
+  }
+
+  const handleAddTest = () => {
+    if (selectedPatient) {
+      const updatedPatient = {
+        ...selectedPatient,
+        treatment: {
+          ...selectedPatient.treatment,
+          tests: [...selectedPatient.treatment.tests, { ...newTest, id: Date.now().toString() }],
+        },
+      }
+      setPatients(patients.map((p) => (p.id === selectedPatient.id ? updatedPatient : p)))
+      setSelectedPatient(updatedPatient)
+      setNewTest({ name: "", date: "" })
+    }
+  }
+
+  const handleAddPrescription = () => {
+    if (selectedPatient) {
+      const updatedPatient = {
+        ...selectedPatient,
+        treatment: {
+          ...selectedPatient.treatment,
+          prescriptions: [
+            ...selectedPatient.treatment.prescriptions,
+            { ...newPrescription, id: Date.now().toString() },
+          ],
+        },
+      }
+      setPatients(patients.map((p) => (p.id === selectedPatient.id ? updatedPatient : p)))
+      setSelectedPatient(updatedPatient)
+      setNewPrescription({ medication: "", dosage: "", frequency: "", route: "", refills: 0 })
+    }
+  }
+
+  const handleAddNote = () => {
+    if (selectedPatient) {
+      const updatedPatient = {
+        ...selectedPatient,
+        treatment: {
+          ...selectedPatient.treatment,
+          notes: [
+            ...selectedPatient.treatment.notes,
+            {
+              ...newNote,
+              id: Date.now().toString(),
+              timestamp: new Date().toISOString(),
+              author: "Current User", // Replace with actual user name
+            },
+          ],
+        },
+      }
+      setPatients(patients.map((p) => (p.id === selectedPatient.id ? updatedPatient : p)))
+      setSelectedPatient(updatedPatient)
+      setNewNote({ content: "" })
     }
   }
 
@@ -820,9 +974,162 @@ const CalendarApp: React.FC = () => {
             )}
             {activeTab === "Treatment" && (
               <div>
-                <p className="mb-4">
-                  <strong>Treatment:</strong> {selectedPatient.treatment}
-                </p>
+                <h3 className="text-lg font-semibold mb-2">Diagnosis</h3>
+                <div className="mb-4">
+                  <div className="flex gap-2 mb-2">
+                    <div className="relative flex-grow">
+                      <input
+                        type="text"
+                        value={newDiagnosis.icdCode}
+                        onChange={(e) => setNewDiagnosis({ ...newDiagnosis, icdCode: e.target.value })}
+                        placeholder="Search ICD-10 code"
+                        className="w-full p-2 pr-8 bg-gray-700 rounded text-white"
+                      />
+                      <MagnifyingGlassIcon className="absolute right-2 top-2 h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      value={newDiagnosis.description}
+                      onChange={(e) => setNewDiagnosis({ ...newDiagnosis, description: e.target.value })}
+                      placeholder="Diagnosis description"
+                      className="flex-grow p-2 bg-gray-700 rounded text-white"
+                    />
+                    <button
+                      onClick={handleAddDiagnosis}
+                      className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  <ul className="list-disc pl-5">
+                    {selectedPatient.treatment.diagnoses.map((diagnosis) => (
+                      <li key={diagnosis.id}>
+                        {diagnosis.icdCode} - {diagnosis.description}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <h3 className="text-lg font-semibold mb-2">Test Ordering</h3>
+                <div className="mb-4">
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={newTest.name}
+                      onChange={(e) => setNewTest({ ...newTest, name: e.target.value })}
+                      placeholder="Test name"
+                      className="flex-grow p-2 bg-gray-700 rounded text-white"
+                    />
+                    <input
+                      type="date"
+                      value={newTest.date}
+                      onChange={(e) => setNewTest({ ...newTest, date: e.target.value })}
+                      className="p-2 bg-gray-700 rounded text-white"
+                    />
+                    <button
+                      onClick={handleAddTest}
+                      className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+                    >
+                      Order Test
+                    </button>
+                  </div>
+                  <ul className="list-disc pl-5">
+                    {selectedPatient.treatment.tests.map((test) => (
+                      <li key={test.id}>
+                        {test.name} - {test.date}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <h3 className="text-lg font-semibold mb-2">Prescription Management</h3>
+                <div className="mb-4">
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={newPrescription.medication}
+                      onChange={(e) => setNewPrescription({ ...newPrescription, medication: e.target.value })}
+                      placeholder="Medication"
+                      className="p-2 bg-gray-700 rounded text-white"
+                    />
+                    <input
+                      type="text"
+                      value={newPrescription.dosage}
+                      onChange={(e) => setNewPrescription({ ...newPrescription, dosage: e.target.value })}
+                      placeholder="Dosage"
+                      className="p-2 bg-gray-700 rounded text-white"
+                    />
+                    <input
+                      type="text"
+                      value={newPrescription.frequency}
+                      onChange={(e) => setNewPrescription({ ...newPrescription, frequency: e.target.value })}
+                      placeholder="Frequency"
+                      className="p-2 bg-gray-700 rounded text-white"
+                    />
+                    <input
+                      type="text"
+                      value={newPrescription.route}
+                      onChange={(e) => setNewPrescription({ ...newPrescription, route: e.target.value })}
+                      placeholder="Route"
+                      className="p-2 bg-gray-700 rounded text-white"
+                    />
+                    <input
+                      type="number"
+                      value={newPrescription.refills}
+                      onChange={(e) =>
+                        setNewPrescription({ ...newPrescription, refills: Number.parseInt(e.target.value) })
+                      }
+                      placeholder="Refills"
+                      className="p-2 bg-gray-700 rounded text-white"
+                    />
+                    <button
+                      onClick={handleAddPrescription}
+                      className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+                    >
+                      Add Prescription
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-400 mb-2">
+                    Preferred Pharmacy: {selectedPatient.preferredPharmacy || "Not specified"}
+                  </p>
+                  <ul className="list-disc pl-5">
+                    {selectedPatient.treatment.prescriptions.map((prescription) => (
+                      <li key={prescription.id}>
+                        {prescription.medication} - {prescription.dosage}, {prescription.frequency},{" "}
+                        {prescription.route}, Refills: {prescription.refills}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <h3 className="text-lg font-semibold mb-2">Notes</h3>
+                <div className="mb-4">
+                  <div className="flex gap-2 mb-2">
+                    <textarea
+                      value={newNote.content}
+                      onChange={(e) => setNewNote({ content: e.target.value })}
+                      placeholder="Add a note..."
+                      className="flex-grow p-2 bg-gray-700 rounded text-white"
+                      rows={3}
+                    />
+                    <button
+                      onClick={handleAddNote}
+                      className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+                    >
+                      Add Note
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {selectedPatient.treatment.notes.map((note) => (
+                      <div key={note.id} className="bg-gray-700 p-2 rounded">
+                        <p className="text-sm text-gray-400">
+                          {new Date(note.timestamp).toLocaleString()} - {note.author}
+                        </p>
+                        <p className="whitespace-pre-wrap">{note.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
             {activeTab === "Billing" && (
@@ -1079,5 +1386,7 @@ const CalendarApp: React.FC = () => {
 }
 
 export default CalendarApp
+
+
 
 
