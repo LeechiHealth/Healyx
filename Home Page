@@ -67,6 +67,21 @@ type Patient = {
   }
   billing: string
   preferredPharmacy?: string
+  subscriberName?: string
+  subscriberDOB?: string
+  groupNumber?: string
+  memberId?: string
+  insurancePhone?: string
+  insuranceURL?: string
+  transactions?: {
+    icdCode: string
+    treatment: string
+    billableAmount: number
+    claimStatus: string
+    billDate: string
+    postDate: string
+    isCashTransaction: boolean
+  }[]
 }
 
 const CalendarApp: React.FC = () => {
@@ -97,6 +112,23 @@ const CalendarApp: React.FC = () => {
       },
       billing: "Paid",
       preferredPharmacy: "CVS Pharmacy",
+      subscriberName: "Jane Doe",
+      subscriberDOB: "1965-03-10",
+      groupNumber: "12345",
+      memberId: "67890",
+      insurancePhone: "555-555-5555",
+      insuranceURL: "https://www.exampleinsurance.com",
+      transactions: [
+        {
+          icdCode: "I10",
+          treatment: "Hypertension Management",
+          billableAmount: 150,
+          claimStatus: "Paid",
+          billDate: "2024-03-15",
+          postDate: "2024-03-22",
+          isCashTransaction: false,
+        },
+      ],
     },
     {
       id: "234567",
@@ -114,6 +146,7 @@ const CalendarApp: React.FC = () => {
         notes: [],
       },
       billing: "Pending",
+      transactions: [],
     },
     {
       id: "345678",
@@ -131,6 +164,7 @@ const CalendarApp: React.FC = () => {
         notes: [],
       },
       billing: "Unpaid",
+      transactions: [],
     },
   ])
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -869,6 +903,7 @@ const CalendarApp: React.FC = () => {
             </div>
             {activeTab === "Demographics" && (
               <div>
+                {" "}
                 <p className="mb-2">
                   <strong>Name:</strong> {selectedPatient.name}
                 </p>
@@ -1134,9 +1169,71 @@ const CalendarApp: React.FC = () => {
             )}
             {activeTab === "Billing" && (
               <div>
-                <p className="mb-4">
-                  <strong>Billing:</strong> {selectedPatient.billing}
+                <h3 className="text-lg font-semibold mb-2">Billing Information</h3>
+                <p className="mb-2">
+                  <strong>Billing Status:</strong> {selectedPatient.billing}
                 </p>
+                <p className="mb-2">
+                  <strong>Subscriber Name:</strong> {selectedPatient.subscriberName || "N/A"}
+                </p>
+                <p className="mb-2">
+                  <strong>Subscriber DOB:</strong> {selectedPatient.subscriberDOB || "N/A"}
+                </p>
+                <p className="mb-2">
+                  <strong>Group Number:</strong> {selectedPatient.groupNumber || "N/A"}
+                </p>
+                <p className="mb-2">
+                  <strong>Member ID:</strong> {selectedPatient.memberId || "N/A"}
+                </p>
+                <p className="mb-2">
+                  <strong>Insurance Phone:</strong> {selectedPatient.insurancePhone || "N/A"}
+                </p>
+                <p className="mb-2">
+                  <strong>Insurance URL:</strong>{" "}
+                  {selectedPatient.insuranceURL ? (
+                    <a
+                      href={selectedPatient.insuranceURL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:text-blue-300"
+                    >
+                      {selectedPatient.insuranceURL}
+                    </a>
+                  ) : (
+                    "N/A"
+                  )}
+                </p>
+
+                <h4 className="text-md font-semibold mt-4 mb-2">Transactions</h4>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full bg-gray-800 rounded-lg">
+                    <thead>
+                      <tr className="text-gray-400">
+                        <th className="px-4 py-2 text-left">ICD Code</th>
+                        <th className="px-4 py-2 text-left">Treatment</th>
+                        <th className="px-4 py-2 text-left">Billable Amount</th>
+                        <th className="px-4 py-2 text-left">Claim Status</th>
+                        <th className="px-4 py-2 text-left">Bill Date</th>
+                        <th className="px-4 py-2 text-left">Post Date</th>
+                        <th className="px-4 py-2 text-left">Payment Type</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedPatient.transactions &&
+                        selectedPatient.transactions.map((transaction, index) => (
+                          <tr key={index} className="border-t border-gray-700">
+                            <td className="px-4 py-2">{transaction.icdCode}</td>
+                            <td className="px-4 py-2">{transaction.treatment}</td>
+                            <td className="px-4 py-2">${transaction.billableAmount.toFixed(2)}</td>
+                            <td className="px-4 py-2">{transaction.claimStatus}</td>
+                            <td className="px-4 py-2">{transaction.billDate}</td>
+                            <td className="px-4 py-2">{transaction.postDate}</td>
+                            <td className="px-4 py-2">{transaction.isCashTransaction ? "Cash" : "Insurance"}</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>
@@ -1386,6 +1483,8 @@ const CalendarApp: React.FC = () => {
 }
 
 export default CalendarApp
+
+
 
 
 
