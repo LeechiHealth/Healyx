@@ -1,8 +1,7 @@
 "use client"
-
+import { PencilIcon, TrashIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline"
 import type React from "react"
 import { useState } from "react"
-import { PencilIcon, TrashIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline"
 
 type Appointment = {
   id: string
@@ -82,6 +81,16 @@ type Patient = {
     postDate: string
     isCashTransaction: boolean
   }[]
+}
+
+interface StructuredData {
+  patient?: { name: string; dob: string; gender: string }
+  provider?: { name: string; specialty: string }
+  treatment?: string
+  dates?: { start: string; end?: string }
+  medications?: string[]
+  injuryOrDisease?: string
+  medicalDevices?: string[]
 }
 
 const CalendarApp: React.FC = () => {
@@ -231,6 +240,10 @@ const CalendarApp: React.FC = () => {
   const [newNote, setNewNote] = useState<Omit<Note, "id" | "timestamp" | "author">>({
     content: "",
   })
+  const [structuredData, setStructuredData] = useState<StructuredData | null>(null)
+  const [loading, setLoading] = useState<boolean>(false)
+  const [error, setError] = useState<string | null>(null)
+  const [filteredTypes, setFilteredTypes] = useState<string[]>([])
 
   const generatePatientId = () => {
     return String(Math.floor(100000 + Math.random() * 900000))
@@ -706,6 +719,91 @@ const CalendarApp: React.FC = () => {
     }
   }
 
+  const handleSubmit = async () => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const response = await new Promise<{ data: { structuredData: StructuredData } }>((resolve) => {
+        setTimeout(() => {
+          const mockStructuredData: StructuredData = {
+            patient: { name: "John Doe", dob: "1980-01-01", gender: "Male" },
+            provider: { name: "Dr. Smith", specialty: "Cardiology" },
+            treatment: "Angioplasty",
+            dates: { start: "2023-10-26", end: "2023-10-27" },
+            medications: ["Aspirin", "Clopidogrel"],
+            injuryOrDisease: "Coronary Artery Disease",
+            medicalDevices: ["Stent"],
+          }
+
+          resolve({ data: { structuredData: mockStructuredData } })
+        }, 1000)
+      })
+
+      if (response && response.data) {
+        const data = response.data.structuredData
+        setStructuredData(data)
+      } else {
+        setError("Failed to process the data. Please try again.")
+      }
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleFilterChange = (type: string) => {
+    setFilteredTypes((prev) => {
+      if (prev.includes(type)) {
+        return prev.filter((t) => t !== type)
+      } else {
+        return [...prev, type]
+      }
+    })
+  }
+
+  const renderFilteredData = () => {
+    if (!structuredData) return null
+    return Object.entries(structuredData)
+      .filter(([key]) => filteredTypes.length === 0 || filteredTypes.includes(key))
+      .map(([key, value]) => {
+        let colorClass = "bg-gray-200"
+        switch (key) {
+          case "patient":
+            colorClass = "bg-red-200"
+            break
+          case "provider":
+            colorClass = "bg-green-200"
+            break
+          case "treatment":
+            colorClass = "bg-blue-200"
+            break
+          case "dates":
+            colorClass = "bg-yellow-200"
+            break
+          case "medications":
+            colorClass = "bg-purple-200"
+            break
+          case "injuryOrDisease":
+            colorClass = "bg-pink-200"
+            break
+          case "medicalDevices":
+            colorClass = "bg-teal-200"
+            break
+          default:
+            colorClass = "bg-gray-200"
+        }
+
+        return (
+          <div key={key} className={`p-4 mb-4 rounded-md ${colorClass}`}>
+            <h3 className="font-semibold text-gray-700 capitalize">{key}</h3>
+            <pre className="text-sm overflow-x-auto">{JSON.stringify(value, null, 2)}</pre>
+          </div>
+        )
+      })
+  }
+
   return (
     <div className="bg-gray-900 min-h-screen text-white">
       <nav className="bg-gray-800 p-4 flex items-center justify-between">
@@ -1139,22 +1237,62 @@ const CalendarApp: React.FC = () => {
 
                 <h3 className="text-lg font-semibold mb-2">Notes</h3>
                 <div className="mb-4">
-                  <div className="flex gap-2 mb-2">
+                  <div className="flex flex-col gap-2 mb-2">
                     <textarea
                       value={newNote.content}
                       onChange={(e) => setNewNote({ content: e.target.value })}
-                      placeholder="Add a note..."
-                      className="flex-grow p-2 bg-gray-700 rounded text-white"
-                      rows={3}
+                      placeholder="Enter clinical notes here..."
+                      className="w-full p-3 border rounded-md text-gray-700 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-shadow"
+                      rows={8}
                     />
-                    <button
-                      onClick={handleAddNote}
-                      className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
-                    >
-                      Add Note
-                    </button>
+                    <div className="flex justify-between">
+                      <button
+                        onClick={handleSubmit}
+                        className={`bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-colors ${loading ? "opacity-75 cursor-not-allowed" : ""}`}
+                        disabled={loading}
+                      >
+                        {loading ? "Processing..." : "Convert to Structured Data"}
+                      </button>
+                      <button
+                        onClick={handleAddNote}
+                        className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded"
+                      >
+                        Add Note
+                      </button>
+                    </div>
+                    {error && <p className="text-red-500 mt-2">{error}</p>}
                   </div>
-                  <div className="space-y-2">
+
+                  {structuredData && (
+                    <div className="mt-4">
+                      <h4 className="text-md font-semibold mb-2">Structured Data</h4>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {[
+                          "patient",
+                          "provider",
+                          "treatment",
+                          "dates",
+                          "medications",
+                          "injuryOrDisease",
+                          "medicalDevices",
+                        ].map((type) => (
+                          <label key={type} className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              checked={filteredTypes.includes(type)}
+                              onChange={() => handleFilterChange(type)}
+                            />
+                            <span className="text-sm text-gray-300 capitalize">{type}</span>
+                          </label>
+                        ))}
+                      </div>
+                      <div className="bg-gray-700 p-4 rounded-md">{renderFilteredData()}</div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2 mt-4">
+                    <h4 className="text-md font-semibold mb-2">Previous Notes</h4>
                     {selectedPatient.treatment.notes.map((note) => (
                       <div key={note.id} className="bg-gray-700 p-2 rounded">
                         <p className="text-sm text-gray-400">
@@ -1483,9 +1621,4 @@ const CalendarApp: React.FC = () => {
 }
 
 export default CalendarApp
-
-
-
-
-
 
