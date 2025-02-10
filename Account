@@ -1,185 +1,252 @@
-import React, { useState } from 'react';
+"use client"
 
-export default function AccountPage() {
-    const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState<'card' | 'bank'>('card');
-    const [adminName, setAdminName] = useState("Dr. Example Admin");
-    const [organization, setOrganization] = useState("Example Healthcare");
-    const [npi, setNpi] = useState("1234567890");
-    const [email, setEmail] = useState("admin@example.com");
+import type React from "react"
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Switch } from "@/components/ui/switch"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { toast } from "@/components/ui/use-toast"
+import { Loader2, CreditCard, Building, FileUp, FileDown } from "lucide-react"
 
-    const handleOpenBillingModal = () => {
-        setIsBillingModalOpen(true);
-    };
+export default function AccountSettingsPage() {
+  const [isEditing, setIsEditing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [accountInfo, setAccountInfo] = useState({
+    adminName: "Dr. Example Admin",
+    organization: "Example Healthcare",
+    npi: "1234567890",
+    email: "admin@example.com",
+  })
 
-    const handleCloseBillingModal = () => {
-        setIsBillingModalOpen(false);
-    };
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAccountInfo({ ...accountInfo, [e.target.name]: e.target.value })
+  }
 
-    const handlePaymentMethodChange = (method: 'card' | 'bank') => {
-        setPaymentMethod(method);
-    };
+  const handleSaveAccountInfo = async () => {
+    setIsSaving(true)
+    // Simulating an API call
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    setIsSaving(false)
+    setIsEditing(false)
+    toast({
+      title: "Account updated",
+      description: "Your account information has been updated successfully.",
+    })
+  }
 
-     const handleEditAccountInfo = () => {
-        // Implement logic to enable editing of the account information fields.
-    };
+  return (
+    <div className="min-h-screen bg-gray-900 text-gray-100">
+      <div className="container mx-auto p-6">
+        <h1 className="text-4xl font-bold mb-8 text-blue-400">Account Settings</h1>
 
-    const handleSaveAccountInfo = () => {
-        // Implement logic to save changes to account information.
-        console.log("Account info saved.");
-    };
+        <Tabs defaultValue="account" className="space-y-6">
+          <TabsList className="bg-gray-800">
+            <TabsTrigger value="account" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              Account
+            </TabsTrigger>
+            <TabsTrigger value="billing" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              Billing
+            </TabsTrigger>
+            <TabsTrigger
+              value="import-export"
+              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+            >
+              Import/Export
+            </TabsTrigger>
+          </TabsList>
 
-
-    return (
-        <div className="bg-gray-800 min-h-screen text-white">
-            <div className="container mx-auto p-8">
-                <h1 className="text-4xl font-bold mb-8 text-white">Account Settings</h1>
-
-                <div className="bg-gray-700 rounded-lg p-6 mb-8">
-                    <h2 className="text-2xl font-semibold mb-4 text-blue-300">Account Information</h2>
-                    <div className="space-y-4">
-                       <div className="flex items-center justify-between">
-                            <label className="block text-gray-300 text-sm font-medium mb-2">Admin Name:</label>
-                            <input 
-                            type="text"
-                             value={adminName}
-                             onChange={(e) => setAdminName(e.target.value)}
-                             className="bg-gray-600 text-white border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 w-1/2"
-                             />
-                       </div>
-                       <div className="flex items-center justify-between">
-                            <label className="block text-gray-300 text-sm font-medium mb-2">Account Number:</label>
-                            <span className="text-gray-400 text-sm ml-4">#7894561230</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <label className="block text-gray-300 text-sm font-medium mb-2">Organization:</label>
-                            <input 
-                            type="text"
-                            value={organization}
-                            onChange={(e) => setOrganization(e.target.value)}
-                             className="bg-gray-600 text-white border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 w-1/2"
-                            />
-                        </div>
-                       <div className="flex items-center justify-between">
-                            <label className="block text-gray-300 text-sm font-medium mb-2">NPI:</label>
-                             <input 
-                            type="text"
-                            value={npi}
-                            onChange={(e) => setNpi(e.target.value)}
-                             className="bg-gray-600 text-white border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 w-1/2"
-                            />
-                        </div>
-                        <div className="flex items-center justify-between">
-                             <label className="block text-gray-300 text-sm font-medium mb-2">Email:</label>
-                             <input 
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                             className="bg-gray-600 text-white border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 w-1/2"
-                            />
-                        </div>
-
-                    </div>
-                    <div className="mt-4 flex justify-end space-x-2">
-                        <button
-                            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                            onClick={handleEditAccountInfo}
-                        >
-                            Edit
-                        </button>
-                         <button
-                            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                            onClick={handleSaveAccountInfo}
-                        >
-                            Save
-                        </button>
-                    </div>
+          <TabsContent value="account">
+            <Card className="bg-gray-800 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-blue-400">Account Information</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Manage your account details and preferences.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="editing-mode" className="text-gray-300">
+                    Editing Mode
+                  </Label>
+                  <Switch id="editing-mode" checked={isEditing} onCheckedChange={setIsEditing} />
                 </div>
-
-                <div className="bg-gray-700 rounded-lg p-6 mb-8">
-                    <h2 className="text-2xl font-semibold mb-4 text-blue-300">Import/Export Patients</h2>
-                    <p className="text-gray-300 mb-4">Import or export patient lists as CSV files.</p>
-                    <div className="flex space-x-4">
-                        <button className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                            Import Patients
-                        </button>
-                        <button className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                            Export Patients
-                        </button>
-                    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-name" className="text-gray-300">
+                    Admin Name
+                  </Label>
+                  <Input
+                    id="admin-name"
+                    name="adminName"
+                    value={accountInfo.adminName}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    className="bg-gray-700 border-gray-600 text-gray-100"
+                  />
                 </div>
-
-                <div className="bg-gray-700 rounded-lg p-6 mb-8">
-                    <h2 className="text-2xl font-semibold mb-4 text-blue-300">Billing Information</h2>
-                     <p className="text-gray-300 mb-4">Manage your payment methods and subscription.</p>
-                    <button
-                        onClick={handleOpenBillingModal}
-                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                    >
-                        Manage Billing
-                    </button>
+                <div className="space-y-2">
+                  <Label htmlFor="organization" className="text-gray-300">
+                    Organization
+                  </Label>
+                  <Input
+                    id="organization"
+                    name="organization"
+                    value={accountInfo.organization}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    className="bg-gray-700 border-gray-600 text-gray-100"
+                  />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="npi" className="text-gray-300">
+                    NPI
+                  </Label>
+                  <Input
+                    id="npi"
+                    name="npi"
+                    value={accountInfo.npi}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    className="bg-gray-700 border-gray-600 text-gray-100"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-gray-300">
+                    Email
+                  </Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={accountInfo.email}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    className="bg-gray-700 border-gray-600 text-gray-100"
+                  />
+                </div>
+              </CardContent>
+              <CardFooter>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button disabled={!isEditing || isSaving} className="bg-blue-600 hover:bg-blue-700 text-white">
+                      {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Save Changes
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="bg-gray-800 text-gray-100">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-blue-400">Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription className="text-gray-300">
+                        This action will update your account information. Are you sure you want to continue?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel className="bg-gray-700 text-gray-100 hover:bg-gray-600">
+                        Cancel
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleSaveAccountInfo}
+                        className="bg-blue-600 text-white hover:bg-blue-700"
+                      >
+                        Continue
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </CardFooter>
+            </Card>
+          </TabsContent>
 
-                  {isBillingModalOpen && (
-                    <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center">
-                        <div className="bg-gray-800 rounded-lg p-8 w-96">
-                            <h2 className="text-2xl font-semibold mb-6 text-blue-300">Billing Details</h2>
-                            <div className="flex justify-between mb-4">
-                                <button
-                                    onClick={() => handlePaymentMethodChange('card')}
-                                    className={`text-white py-2 px-4 rounded ${paymentMethod === 'card' ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'}`}
-                                >
-                                    Add Card
-                                </button>
-                                <button
-                                    onClick={() => handlePaymentMethodChange('bank')}
-                                    className={`text-white py-2 px-4 rounded ${paymentMethod === 'bank' ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'}`}
-                                >
-                                    Add Bank Account
-                                </button>
-                            </div>
-
-                            {paymentMethod === 'card' && (
-                                <div className="space-y-4">
-                                    <label className="block text-gray-300 text-sm font-medium">Card Number:</label>
-                                    <input type="text" className="bg-gray-600 text-white border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 w-full" />
-                                    <label className="block text-gray-300 text-sm font-medium">Expiry Date:</label>
-                                    <input type="text" className="bg-gray-600 text-white border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 w-full" />
-                                     <label className="block text-gray-300 text-sm font-medium">CVC:</label>
-                                    <input type="text" className="bg-gray-600 text-white border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 w-full" />
-                                </div>
-                            )}
-                            {paymentMethod === 'bank' && (
-                                <div className="space-y-4">
-                                    <label className="block text-gray-300 text-sm font-medium">Account Holder Name:</label>
-                                    <input type="text" className="bg-gray-600 text-white border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 w-full" />
-                                    <label className="block text-gray-300 text-sm font-medium">Account Number:</label>
-                                    <input type="text" className="bg-gray-600 text-white border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 w-full" />
-                                    <label className="block text-gray-300 text-sm font-medium">Routing Number:</label>
-                                    <input type="text" className="bg-gray-600 text-white border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500 w-full" />
-                                </div>
-                            )}
-
-                            <div className="flex justify-end mt-6">
-                                <button
-                                    onClick={handleCloseBillingModal}
-                                    className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mr-2"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleCloseBillingModal}
-                                    className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                                >
-                                    Save
-                                </button>
-                            </div>
-                        </div>
+          <TabsContent value="billing">
+            <Card className="bg-gray-800 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-blue-400">Billing Information</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Manage your payment methods and subscription.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Manage Payment Methods
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px] bg-gray-800 text-gray-100">
+                    <DialogHeader>
+                      <DialogTitle className="text-blue-400">Payment Methods</DialogTitle>
+                      <DialogDescription className="text-gray-400">
+                        Add or manage your payment methods here. You can add credit cards or bank accounts.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <Button variant="outline" className="bg-gray-700 text-gray-100 hover:bg-gray-600 border-gray-600">
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        Add Credit Card
+                      </Button>
+                      <Button variant="outline" className="bg-gray-700 text-gray-100 hover:bg-gray-600 border-gray-600">
+                        <Building className="mr-2 h-4 w-4" />
+                        Add Bank Account
+                      </Button>
                     </div>
-                )}
+                    <DialogFooter>
+                      <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">
+                        Save changes
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-
-            </div>
-        </div>
-    );
+          <TabsContent value="import-export">
+            <Card className="bg-gray-800 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-blue-400">Import/Export Patients</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Manage your patient data by importing or exporting CSV files.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <FileUp className="mr-2 h-4 w-4" />
+                  Import Patients
+                </Button>
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <FileDown className="mr-2 h-4 w-4" />
+                  Export Patients
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  )
 }
+
+
