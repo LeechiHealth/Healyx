@@ -1,1 +1,28 @@
+"use client"
+
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+
+interface PaymentModalProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+export function PaymentModal({ isOpen, onClose }: PaymentModalProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Complete Payment</DialogTitle>
+        </DialogHeader>
+        <div className="w-full">
+          <stripe-buy-button
+            buy-button-id="buy_btn_1QqzyfDuknJJN8izasp3eA56"
+            publishable-key="pk_live_51HaqgIDuknJJN8izCmJKupOfBw1xNWggY3Zs25gWKRtI4EJV4BeW3WqPtb4b4r2wCoU9nlOM4lLOWzo2maWtuPHY003Q8G4L5Y"
+          ></stripe-buy-button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 
