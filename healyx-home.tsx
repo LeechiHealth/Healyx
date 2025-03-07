@@ -105,19 +105,7 @@ interface StructuredData {
 }
 
 const InputField = ({ label, name, type = "text", value, onChange, className = "" }) => (
-  <div className={className}>
-    <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor={name}>
-      {label}
-    </label>
-    <input
-      type={type}
-      id={name}
-      name={name}
-      value={value}
-      onChange={onChange}
-      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-    />
-  </div>
+  <div className={className}>{/* Input and label removed as requested */}</div>
 )
 
 const SelectField = ({ label, name, value, onChange, options }) => (
@@ -293,7 +281,19 @@ const CalendarApp: React.FC = () => {
     if (error) {
       console.error("Error fetching patients:", error)
     } else {
-      setPatients(data || [])
+      // Ensure all nested arrays are properly initialized for each patient
+      const processedData = (data || []).map((patient) => ({
+        ...patient,
+        medicalHistory: patient.medicalHistory || [],
+        treatment: {
+          diagnoses: patient.treatment?.diagnoses || [],
+          tests: patient.treatment?.tests || [],
+          prescriptions: patient.treatment?.prescriptions || [],
+          notes: patient.treatment?.notes || [],
+        },
+        transactions: patient.transactions || [],
+      }))
+      setPatients(processedData)
     }
   }
 
@@ -404,6 +404,20 @@ const CalendarApp: React.FC = () => {
       })
       return
     }
+
+    if (name === "patientId") {
+      // When patient ID changes, also update the patient name
+      const selectedPatient = patients.find((p) => p.id === value)
+      const patientName = selectedPatient ? selectedPatient.name : ""
+
+      setNewAppointment({
+        ...newAppointment,
+        patientId: value,
+        patientName: patientName,
+      })
+      return
+    }
+
     setNewAppointment({
       ...newAppointment,
       [name]: value,
@@ -411,25 +425,51 @@ const CalendarApp: React.FC = () => {
   }
 
   const handleAddNewAppointment = async () => {
-    const { data, error } = await supabase
-      .from("appointments")
-      .insert([
-        {
-          patient_name: newAppointment.patientName,
-          date: newAppointment.date.toISOString().split("T")[0],
-          time: newAppointment.time,
-          patient_id: newAppointment.patientId,
-          duration: newAppointment.duration,
-          appointment_type: { type: newAppointment.appointmentType },
-        },
-      ])
-      .select()
+    try {
+      // Log the current appointment data
+      console.log("Adding appointment with data:", newAppointment)
 
-    if (error) {
-      console.error("Error adding new appointment:", error)
-    } else {
-      setAppointments([...appointments, data[0]])
-      handleCloseNewAppointmentModal()
+      // Find the patient name based on the patient ID
+      const selectedPatient = patients.find((p) => p.id === newAppointment.patientId)
+      const patientName = selectedPatient ? selectedPatient.name : "Unknown Patient"
+
+      // Create appointment data with only the columns that are confirmed to exist in the database schema
+      const appointmentData = {
+        date: newAppointment.date.toISOString().split("T")[0],
+        time: newAppointment.time,
+        patient_id: newAppointment.patientId,
+        "Patient Name": patientName, // Use the correct column name with space and capitalization
+        // duration and appointment_type fields removed as they don't exist in the database schema
+      }
+
+      // Log the data being sent to the database
+      console.log("Sending to database:", appointmentData)
+
+      const { data, error } = await supabase.from("appointments").insert([appointmentData]).select()
+
+      if (error) {
+        console.error("Error adding new appointment:", error)
+        alert(`Error adding appointment: ${error.message}`)
+      } else {
+        console.log("Appointment added successfully:", data)
+
+        // Convert the returned data to match our frontend Appointment type
+        const newAppointmentWithId = {
+          id: data[0].id,
+          patientName: patientName,
+          date: new Date(data[0].date),
+          time: data[0].time,
+          patientId: data[0].patient_id,
+          duration: newAppointment.duration, // Keep duration in the frontend object
+          appointmentType: newAppointment.appointmentType, // Keep appointmentType in the frontend object
+        }
+
+        setAppointments([...appointments, newAppointmentWithId])
+        handleCloseNewAppointmentModal()
+      }
+    } catch (err) {
+      console.error("Exception when adding appointment:", err)
+      alert("An unexpected error occurred when adding the appointment.")
     }
   }
 
@@ -490,7 +530,14 @@ const CalendarApp: React.FC = () => {
       sex: newPatient.sex,
       race_ethnicity: newPatient.raceEthnicity,
       notes: newPatient.notes,
-      // Remove any fields that don't exist in the database schema
+      medicalHistory: [],
+      treatment: {
+        diagnoses: [],
+        tests: [],
+        prescriptions: [],
+        notes: [],
+      },
+      transactions: [],
     }
 
     try {
@@ -500,7 +547,19 @@ const CalendarApp: React.FC = () => {
         console.error("Error adding new patient:", error)
         alert(`Error adding patient: ${error.message}`)
       } else {
-        setPatients([...patients, data[0]])
+        // Ensure the returned data has all the necessary properties
+        const newPatient = {
+          ...data[0],
+          medicalHistory: data[0].medicalHistory || [],
+          treatment: {
+            diagnoses: data[0].treatment?.diagnoses || [],
+            tests: data[0].treatment?.tests || [],
+            prescriptions: data[0].treatment?.prescriptions || [],
+            notes: data[0].treatment?.notes || [],
+          },
+          transactions: data[0].transactions || [],
+        }
+        setPatients([...patients, newPatient])
         handleCloseAddPatientModal()
       }
     } catch (err) {
@@ -621,7 +680,7 @@ const CalendarApp: React.FC = () => {
               onDrop={(e) => handleDrop(e, date)}
             >
               <span className="text-white font-semibold">{day}</span>
-              {dayAppointments.map((app) => (
+              {(dayAppointments || []).map((app) => (
                 <div
                   key={app.id}
                   className="mt-1 p-1 rounded-md text-xs bg-blue-900 cursor-pointer"
@@ -656,7 +715,7 @@ const CalendarApp: React.FC = () => {
               <span className="text-white font-semibold">
                 {day.toLocaleDateString("en-US", { weekday: "short", day: "numeric" })}
               </span>
-              {dayAppointments.map((app) => (
+              {(dayAppointments || []).map((app) => (
                 <div
                   key={app.id}
                   className="mt-1 p-1 rounded-md text-xs bg-blue-900 cursor-pointer"
@@ -685,7 +744,7 @@ const CalendarApp: React.FC = () => {
         <div className="text-white font-semibold text-xl pb-4">
           {currentDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
         </div>
-        {dayAppointments.map((app) => (
+        {(dayAppointments || []).map((app) => (
           <div
             key={app.id}
             className="mt-1 p-1 rounded-md text-sm bg-blue-900 cursor-pointer"
@@ -1109,7 +1168,7 @@ const CalendarApp: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredPatients.map((patient) => (
+              {(filteredPatients || []).map((patient) => (
                 <tr key={patient.id} className="border-t border-gray-700 hover:bg-gray-700 cursor-pointer">
                   <td className="px-4 py-2 text-blue-400" onClick={() => handlePatientClick(patient.id)}>
                     {patient.id}
@@ -1208,7 +1267,7 @@ const CalendarApp: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedPatient.medicalHistory.map((entry) => (
+                    {(selectedPatient?.medicalHistory || []).map((entry) => (
                       <tr key={entry.id} className="border-t border-gray-600">
                         <td className="p-2">{entry.date}</td>
                         <td className="p-2">{entry.condition}</td>
@@ -1299,7 +1358,7 @@ const CalendarApp: React.FC = () => {
                     </button>
                   </div>
                   <ul className="list-disc pl-5">
-                    {selectedPatient.treatment.diagnoses.map((diagnosis) => (
+                    {(selectedPatient?.treatment?.diagnoses || []).map((diagnosis) => (
                       <li key={diagnosis.id}>
                         {diagnosis.icdCode} - {diagnosis.description}
                       </li>
@@ -1331,7 +1390,7 @@ const CalendarApp: React.FC = () => {
                     </button>
                   </div>
                   <ul className="list-disc pl-5">
-                    {selectedPatient.treatment.tests.map((test) => (
+                    {(selectedPatient?.treatment?.tests || []).map((test) => (
                       <li key={test.id}>
                         {test.name} - {test.date}
                       </li>
@@ -1390,7 +1449,7 @@ const CalendarApp: React.FC = () => {
                     Preferred Pharmacy: {selectedPatient.preferredPharmacy || "Not specified"}
                   </p>
                   <ul className="list-disc pl-5">
-                    {selectedPatient.treatment.prescriptions.map((prescription) => (
+                    {(selectedPatient?.treatment?.prescriptions || []).map((prescription) => (
                       <li key={prescription.id}>
                         {prescription.medication} - {prescription.dosage}, {prescription.frequency},{" "}
                         {prescription.route}, Refills: {prescription.refills}
@@ -1457,7 +1516,7 @@ const CalendarApp: React.FC = () => {
 
                   <div className="space-y-2 mt-4">
                     <h4 className="text-md font-semibold mb-2">Previous Notes</h4>
-                    {selectedPatient.treatment.notes.map((note) => (
+                    {(selectedPatient?.treatment?.notes || []).map((note) => (
                       <div key={note.id} className="bg-gray-700 p-2 rounded">
                         <p className="text-sm text-gray-400">
                           {new Date(note.timestamp).toLocaleString()} - {note.author}
@@ -1521,18 +1580,17 @@ const CalendarApp: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {selectedPatient.transactions &&
-                        selectedPatient.transactions.map((transaction, index) => (
-                          <tr key={index} className="border-t border-gray-700">
-                            <td className="px-4 py-2">{transaction.icdCode}</td>
-                            <td className="px-4 py-2">{transaction.treatment}</td>
-                            <td className="px-4 py-2">${transaction.billableAmount.toFixed(2)}</td>
-                            <td className="px-4 py-2">{transaction.claimStatus}</td>
-                            <td className="px-4 py-2">{transaction.billDate}</td>
-                            <td className="px-4 py-2">{transaction.postDate}</td>
-                            <td className="px-4 py-2">{transaction.isCashTransaction ? "Cash" : "Insurance"}</td>
-                          </tr>
-                        ))}
+                      {(selectedPatient?.transactions || []).map((transaction, index) => (
+                        <tr key={index} className="border-t border-gray-700">
+                          <td className="px-4 py-2">{transaction.icdCode}</td>
+                          <td className="px-4 py-2">{transaction.treatment}</td>
+                          <td className="px-4 py-2">${transaction.billableAmount.toFixed(2)}</td>
+                          <td className="px-4 py-2">{transaction.claimStatus}</td>
+                          <td className="px-4 py-2">{transaction.billDate}</td>
+                          <td className="px-4 py-2">{transaction.postDate}</td>
+                          <td className="px-4 py-2">{transaction.isCashTransaction ? "Cash" : "Insurance"}</td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -1743,7 +1801,7 @@ const CalendarApp: React.FC = () => {
                       <TextareaField
                         label="Transactions"
                         name="transactions"
-                        value={JSON.stringify(newPatient.transactions)}
+                        value={newPatient.transactions ? JSON.stringify(newPatient.transactions, null, 2) : ""}
                         onChange={handleNewPatientChange}
                       />
                     </div>
@@ -1770,7 +1828,7 @@ const CalendarApp: React.FC = () => {
 
       {isEventModalOpen && selectedEvent && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-screen max-w-md">
             <h2 className="text-xl font-semibold mb-4">{selectedEvent.patientName}</h2>
             <p className="mb-2">
               <strong>Date:</strong> {selectedEvent.date.toLocaleDateString()}
@@ -1779,18 +1837,18 @@ const CalendarApp: React.FC = () => {
               <strong>Time:</strong> {selectedEvent.time}
             </p>
             <p className="mb-2">
-              <strong>Patient ID:</strong> {selectedEvent.patientId}
+              <strong>Type:</strong> {selectedEvent.appointmentType}
             </p>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => handleEditEventClick(selectedEvent)}
-                className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded"
+                className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
               >
-                Edit Details
+                Edit
               </button>
               <button
                 onClick={handleCloseEventModal}
-                className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+                className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded"
               >
                 Close
               </button>
@@ -1799,37 +1857,16 @@ const CalendarApp: React.FC = () => {
         </div>
       )}
 
-      {isEditEventModalOpen && editEvent && (
+      {newAppointmentModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-xl font-semibold mb-4">Edit Appointment</h2>
-            <input
-              type="text"
-              name="title"
-              placeholder="Title"
-              value={editEvent.patientName}
-              onChange={handleEditEventChange}
-              className="w-full p-2 mb-2 text-black rounded"
-            />
-            <input
-              type="date"
-              name="date"
-              value={editEvent.date.toISOString().split("T")[0]}
-              onChange={handleEditEventChange}
-              className="w-full p-2 mb-2 text-black rounded"
-            />
-            <input
-              type="time"
-              name="time"
-              value={editEvent.time}
-              onChange={handleEditEventChange}
-              className="w-full p-2 mb-2 text-black rounded"
-            />
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-screen max-w-md">
+            <h2 className="text-xl font-semibold mb-4">Add New Appointment</h2>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Patient Name</label>
             <select
               name="patientId"
-              value={editEvent.patientId}
-              onChange={handleEditEventChange}
-              className="w-full p-2 mb-2 text-black rounded"
+              value={newAppointment.patientId}
+              onChange={handleNewAppointmentChange}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 mb-4"
             >
               <option value="">Select Patient</option>
               {patients.map((patient) => (
@@ -1838,103 +1875,101 @@ const CalendarApp: React.FC = () => {
                 </option>
               ))}
             </select>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+            <input
+              type="date"
+              name="date"
+              value={newAppointment.date.toISOString().split("T")[0]}
+              onChange={handleNewAppointmentChange}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 mb-4"
+            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+            <input
+              type="time"
+              name="time"
+              value={newAppointment.time}
+              onChange={handleNewAppointmentChange}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 mb-4"
+            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
+            <select
+              name="duration"
+              value={newAppointment.duration}
+              onChange={handleNewAppointmentChange}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 mb-4"
+            >
+              <option value="15">15</option>
+              <option value="30">30</option>
+              <option value="45">45</option>
+              <option value="60">60</option>
+            </select>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Appointment Type</label>
+            <input
+              type="text"
+              name="appointmentType"
+              value={newAppointment.appointmentType}
+              onChange={handleNewAppointmentChange}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 mb-4"
+            />
             <div className="flex justify-end gap-2">
               <button
-                onClick={handleCloseEditEventModal}
+                onClick={handleAddNewAppointment}
+                className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+              >
+                Add
+              </button>
+              <button
+                onClick={handleCloseNewAppointmentModal}
                 className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded"
               >
                 Cancel
-              </button>
-              <button
-                onClick={handleUpdateEvent}
-                className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
-              >
-                Update
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {newAppointmentModalOpen && (
+      {isEditEventModalOpen && editEvent && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg shadow-lg w-[90%] max-w-2xl h-[85vh] flex overflow-hidden">
-            {/* Left panel - Navigation */}
-            <div className="w-72 bg-gray-50 border-r border-gray-200 p-6 flex flex-col h-full">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">New Appointment</h2>
-              <div className="mt-auto">
-                <button
-                  onClick={handleAddNewAppointment}
-                  className="w-full px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  Submit
-                </button>
-              </div>
-            </div>
-
-            {/* Right panel - Form */}
-            <div className="flex-1 p-6 overflow-y-auto">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-screen max-w-md">
+            <h2 className="text-xl font-semibold mb-4">Edit Appointment</h2>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Patient Name</label>
+            <input
+              type="text"
+              name="patientName"
+              value={editEvent.patientName}
+              onChange={handleEditEventChange}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 mb-4"
+            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+            <input
+              type="date"
+              name="date"
+              value={editEvent.date.toISOString().split("T")[0]}
+              onChange={handleEditEventChange}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 mb-4"
+            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+            <input
+              type="time"
+              name="time"
+              value={editEvent.time}
+              onChange={handleEditEventChange}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 mb-4"
+            />
+            <div className="flex justify-end gap-2">
               <button
-                onClick={handleCloseNewAppointmentModal}
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-                aria-label="Close modal"
+                onClick={handleUpdateEvent}
+                className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
               >
-                <span className="text-2xl">&times;</span>
+                Update
               </button>
-              <div className="max-w-3xl mx-auto">
-                <div className="grid grid-cols-2 gap-6">
-                  <InputField
-                    label="Patient Name"
-                    name="patientName"
-                    value={newAppointment.patientName}
-                    onChange={handleNewAppointmentChange}
-                  />
-                  <InputField
-                    label="Date"
-                    name="date"
-                    type="date"
-                    value={newAppointment.date.toISOString().split("T")[0]}
-                    onChange={handleNewAppointmentChange}
-                  />
-                  <InputField
-                    label="Time"
-                    name="time"
-                    type="time"
-                    value={newAppointment.time}
-                    onChange={handleNewAppointmentChange}
-                  />
-                  <InputField
-                    label="Duration (minutes)"
-                    name="duration"
-                    type="number"
-                    value={newAppointment.duration}
-                    onChange={handleNewAppointmentChange}
-                  />
-                  <SelectField
-                    label="Patient"
-                    name="patientId"
-                    value={newAppointment.patientId}
-                    onChange={handleNewAppointmentChange}
-                    options={[
-                      { value: "", label: "Select Patient" },
-                      ...patients.map((patient) => ({ value: patient.id, label: patient.name })),
-                    ]}
-                  />
-                  <SelectField
-                    label="Appointment Type"
-                    name="appointmentType"
-                    value={newAppointment.appointmentType}
-                    onChange={handleNewAppointmentChange}
-                    options={[
-                      { value: "", label: "Select Type" },
-                      { value: "checkup", label: "Check-up" },
-                      { value: "followup", label: "Follow-up" },
-                      { value: "emergency", label: "Emergency" },
-                      { value: "consultation", label: "Consultation" },
-                    ]}
-                  />
-                </div>
-              </div>
+              <button
+                onClick={handleCloseEditEventModal}
+                className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
