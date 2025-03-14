@@ -2486,8 +2486,3 @@ const CalendarApp: React.FC = () => {
     </div>
   )
 }
-
-export default CalendarApp
-\`\`\`
-
-
