@@ -525,8 +525,13 @@ const CalendarApp: React.FC = () => {
       phone: "",
       email: "",
       address: "",
-      medicalHistory: "",
-      treatment: "",
+      medicalHistory: [],
+      treatment: {
+      diagnoses: [],
+      tests: [],
+      prescriptions: [],
+      notes: []
+},
       preferredPharmacy: "",
       subscriberName: "",
       subscriberDOB: "",
