@@ -1,19 +1,10 @@
-import React from 'react';
-import CalendarApp from '../components/calendar-app';
-
-export default function CalendarAppPage() {
-  return <CalendarApp />;
-}
 "use client"
 
-import type React from "react"
 import { useState, useEffect } from "react"
-// Update the import statement for ProviderAuth
-import ProviderAuth from "./provider-auth"
 import { useRouter } from "next/navigation"
-
-// Use the existing supabase client from your lib folder
+import ProviderAuth from "./provider-auth"
 import { supabase } from "../lib/supabase-client"
+
 
 type Appointment = {
   id: string
