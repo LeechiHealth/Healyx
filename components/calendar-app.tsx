@@ -13,7 +13,7 @@ import ProviderAuth from "./provider-auth"
 import { useRouter } from "next/navigation"
 
 // Use the existing supabase client from your lib folder
-import { supabase } from "@/lib/supabase-client"
+import { supabase } from "../lib/supabase-client"
 
 type Appointment = {
   id: string
