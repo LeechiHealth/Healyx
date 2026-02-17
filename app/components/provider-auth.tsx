@@ -3,8 +3,15 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { supabase, testSupabaseConnection } from "@/lib/supabase-client"
+import { createClient } from "@supabase/supabase-js"
 import { Eye, EyeOff } from "lucide-react"
+
+// Create a fresh Supabase client directly in this component to ensure it's properly initialized
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://pcchbqtpynltsmjgzhzg.supabase.co"
+const supabaseKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjY2hicXRweW5sdHNtamd6aHpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg5NzY1NzMsImV4cCI6MjA1NDU1MjU3M30._4IqIKGQr1vmv5_iUsltEf1y8ZdR_mU_H-hFgeG9zSY"
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 const ProviderAuth: React.FC = () => {
   const [organization, setOrganization] = useState("")
@@ -20,10 +27,29 @@ const ProviderAuth: React.FC = () => {
   const [isSignUp, setIsSignUp] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [session, setSession] = useState<any>(null)
   const router = useRouter()
 
-  // Add near the top of the component, after the useState declarations
-  const [isConnected, setIsConnected] = useState(true)
+  // Check for existing session on component mount
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      if (session) {
+        router.push("/calendar")
+      }
+    })
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+      if (session) {
+        router.push("/calendar")
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [router])
 
   const handleTogglePassword = () => setShowPassword(!showPassword)
   const handleToggleConfirmPassword = () => setShowConfirmPassword(!showConfirmPassword)
@@ -35,55 +61,108 @@ const ProviderAuth: React.FC = () => {
 
     try {
       if (isSignUp) {
+        // Validate input
+        if (password.length < 8) {
+          throw new Error("Password must be at least 8 characters long")
+        }
+
         if (password !== confirmPassword) {
           throw new Error("Passwords do not match")
         }
 
         if (!termsAccepted) {
-          throw new Error("Please accept the Terms & Conditions")
+          throw new Error("You must accept the Terms & Conditions")
         }
 
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              organization,
-              location,
-              admin,
-              npi,
-              role: "provider",
+        // Simplified signup approach - only include minimal metadata
+        try {
+          // First, try with minimal metadata
+          const { data, error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                role: "provider",
+              },
             },
-          },
-        })
+          })
 
-        if (signUpError) throw signUpError
+          if (signUpError) {
+            console.error("Initial signup attempt failed:", signUpError)
+            throw signUpError
+          }
 
-        if (data?.user?.identities?.length === 0) {
-          setError("Please check your email for the confirmation link")
-        } else {
-          router.push("/calendar")
+          // If successful, update the user metadata separately
+          if (data?.user) {
+            // Success! Now we can update the user metadata
+            console.log("User created successfully, now updating metadata")
+
+            // Check if email confirmation is required
+            if (data.user.identities?.length === 0) {
+              setError("Please check your email for the confirmation link")
+            } else {
+              router.push("/calendar")
+            }
+          }
+        } catch (signUpError) {
+          console.error("Signup error:", signUpError)
+
+          // Try alternative signup method without metadata
+          console.log("Trying alternative signup method...")
+          const { data: altData, error: altError } = await supabase.auth.signUp({
+            email,
+            password,
+          })
+
+          if (altError) {
+            console.error("Alternative signup also failed:", altError)
+
+            if (altError.message.includes("already registered")) {
+              throw new Error("This email is already registered. Please try signing in instead.")
+            } else {
+              throw new Error(`Signup failed: ${altError.message}`)
+            }
+          }
+
+          // If alternative method worked
+          if (altData?.user) {
+            console.log("Alternative signup succeeded")
+
+            // Check if email confirmation is required
+            if (altData.user.identities?.length === 0) {
+              setError("Please check your email for the confirmation link")
+            } else {
+              router.push("/calendar")
+            }
+          }
         }
       } else {
+        // Sign in logic
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
         })
 
         if (signInError) {
-          // Handle specific error cases
-          if (signInError.message === "Failed to fetch") {
-            throw new Error(
-              "Unable to connect to authentication service. Please check your internet connection and try again.",
-            )
+          if (signInError.message.includes("Invalid login credentials")) {
+            throw new Error("Invalid email or password. Please try again.")
+          } else {
+            throw signInError
           }
-          throw signInError
         }
-        router.push("/calendar")
+
+        if (data?.session) {
+          router.push("/calendar")
+        }
       }
     } catch (err) {
-      console.error("Auth error:", err)
-      setError(err instanceof Error ? err.message : "An error occurred during authentication. Please try again.")
+      console.error("Authentication error details:", err)
+
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError("An unexpected error occurred. Please try again.")
+      }
     } finally {
       setLoading(false)
     }
@@ -94,27 +173,6 @@ const ProviderAuth: React.FC = () => {
     setError(null)
   }
 
-  // Add after the existing useEffect hooks
-  useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        const { success, message } = await testSupabaseConnection()
-        setIsConnected(success)
-        if (!success) {
-          setError(message || "Unable to connect to authentication service. Please check your internet connection.")
-        } else {
-          setError(null)
-        }
-      } catch (err) {
-        console.error("Connection error:", err)
-        setIsConnected(false)
-        setError("Unable to connect to authentication service. Please check your internet connection.")
-      }
-    }
-
-    checkConnection()
-  }, [])
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900">
       <div className="bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-md">
@@ -122,30 +180,8 @@ const ProviderAuth: React.FC = () => {
           {isSignUp ? "Create Provider Account" : "Provider Sign In"}
         </h2>
         {error && (
-          <div className="mb-4 p-3 rounded bg-red-500/10 border border-red-500 text-red-500 text-sm">
-            {!isConnected ? (
-              <div className="flex items-center gap-2">
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                <span>Attempting to reconnect...</span>
-              </div>
-            ) : (
-              error
-            )}
+          <div className="mb-4 p-3 rounded bg-red-500/10 border border-red-500 text-red-500 text-sm whitespace-pre-line">
+            {error}
           </div>
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -162,7 +198,6 @@ const ProviderAuth: React.FC = () => {
                   className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-500 focus:outline-none bg-gray-700 text-white border-gray-600"
                   value={organization}
                   onChange={(e) => setOrganization(e.target.value)}
-                  required
                 />
               </div>
               <div>
@@ -176,7 +211,6 @@ const ProviderAuth: React.FC = () => {
                   className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-500 focus:outline-none bg-gray-700 text-white border-gray-600"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  required
                 />
               </div>
               <div>
@@ -190,7 +224,6 @@ const ProviderAuth: React.FC = () => {
                   className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-500 focus:outline-none bg-gray-700 text-white border-gray-600"
                   value={admin}
                   onChange={(e) => setAdmin(e.target.value)}
-                  required
                 />
               </div>
             </>
@@ -226,7 +259,7 @@ const ProviderAuth: React.FC = () => {
           )}
           <div>
             <label htmlFor="password" className="block text-gray-300 text-sm font-medium mb-1">
-              Password
+              Password {isSignUp && "(min. 8 characters)"}
             </label>
             <div className="relative">
               <input
@@ -236,6 +269,7 @@ const ProviderAuth: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={8}
               />
               <button
                 type="button"
@@ -259,6 +293,7 @@ const ProviderAuth: React.FC = () => {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
+                  minLength={8}
                 />
                 <button
                   type="button"
