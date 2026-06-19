@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Healyx dark theme */
+    --background: 160 18% 7%;
+    --foreground: 150 10% 96%;
+
+    --card: 158 16% 11%;
+    --card-foreground: 150 10% 96%;
+
+    --muted: 158 12% 16%;
+    --muted-foreground: 150 8% 64%;
+
+    --primary: 152 52% 52%;
+    --primary-foreground: 160 30% 8%;
+
+    --accent: 152 40% 22%;
+    --accent-foreground: 150 30% 92%;
+
+    --border: 158 14% 20%;
+
+    --radius: 1.25rem;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    -webkit-font-smoothing: antialiased;
+  }
+}
