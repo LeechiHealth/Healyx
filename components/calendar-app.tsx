@@ -92,10 +92,10 @@ type Patient = {
 }
 
 interface StructuredData {
-  patient?: { name: string; dob: string; gender: string }
-  provider?: { name: string; specialty: string }
+  patient?: { name?: string; dob?: string; gender?: string }
+  provider?: { name?: string; specialty?: string }
   treatment?: string
-  dates?: { start: string; end?: string }
+  dates?: { start?: string; end?: string }
   medications?: string[]
   injuryOrDisease?: string
   medicalDevices?: string[]
@@ -192,8 +192,8 @@ const CalendarApp: React.FC = () => {
     phone: "",
     email: "",
     address: "",
-    medicalHistory: "",
-    treatment: "",
+    medicalHistory: [],
+    treatment: { diagnoses: [], tests: [], prescriptions: [], notes: [] },
     preferredPharmacy: "",
     subscriberName: "",
     subscriberDOB: "",
@@ -2007,10 +2007,6 @@ const CalendarApp: React.FC = () => {
                       onChange={handleNewMedicalHistoryChange}
                     />
                     <TextareaField
-                      label="Notes"
-                      name="notes"
-                      value={newMedicalHistoryEntry.notes}
-                      onChange={handleNewMedicalHistoryChange}
                       label="Notes"
                       name="notes"
                       value={newMedicalHistoryEntry.notes}
