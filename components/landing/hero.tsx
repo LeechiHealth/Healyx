@@ -12,7 +12,7 @@ export function Hero() {
   return (
     <section className="relative overflow-hidden">
       {/* Glow backdrop */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_-10%,hsl(152_52%_18%)_0%,hsl(160_18%_7%)_60%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_-10%,hsl(202_60%_20%)_0%,hsl(205_32%_8%)_60%)]" />
       <div className="pointer-events-none absolute left-1/2 top-10 -z-0 -translate-x-1/2 select-none text-[22vw] font-black leading-none text-foreground/[0.03]">
         Healyx
       </div>

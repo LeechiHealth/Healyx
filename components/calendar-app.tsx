@@ -2015,7 +2015,7 @@ const CalendarApp: React.FC = () => {
                     {editingMedicalHistoryId ? (
                       <button
                         onClick={handleUpdateMedicalHistory}
-                        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-2"
+                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2"
                       >
                         Update Entry
                       </button>
@@ -2320,7 +2320,7 @@ const CalendarApp: React.FC = () => {
               <div className="items-center px-4 py-3">
                 <button
                   onClick={handleAddNewAppointment}
-                  className="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300"
+                  className="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
                 >
                   Add Appointment
                 </button>
@@ -2377,7 +2377,7 @@ const CalendarApp: React.FC = () => {
               <div className="items-center px-4 py-3">
                 <button
                   onClick={handleAddNewPatient}
-                  className="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300"
+                  className="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
                 >
                   Add Patient
                 </button>
@@ -2469,7 +2469,7 @@ const CalendarApp: React.FC = () => {
               <div className="items-center px-4 py-3">
                 <button
                   onClick={handleUpdateEvent}
-                  className="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300"
+                  className="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
                 >
                   Update Appointment
                 </button>
