@@ -1,4 +1,5 @@
 import { ArrowRight, Play, FileText, Check, Sparkles } from "lucide-react"
+import Image from "next/image"
 
 const uploads = [
   { name: "CBC Blood Panel.pdf", size: "1.2 MB" },
@@ -54,7 +55,14 @@ export function Hero() {
               <span className="h-3 w-3 rounded-full bg-muted-foreground/30" />
               <span className="h-3 w-3 rounded-full bg-muted-foreground/30" />
               <span className="h-3 w-3 rounded-full bg-muted-foreground/30" />
-              <span className="ml-3 text-xs font-medium text-muted-foreground">Healyx — Health Dashboard</span>
+              <Image
+                src="/healyx-logo.jpg"
+                alt="Healyx logo"
+                width={18}
+                height={18}
+                className="ml-3 rounded-[22%]"
+              />
+              <span className="text-xs font-medium text-muted-foreground">Healyx — Health Dashboard</span>
             </div>
 
             <div className="grid gap-px bg-border lg:grid-cols-[0.85fr_1.3fr_0.85fr]">

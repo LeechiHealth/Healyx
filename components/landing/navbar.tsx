@@ -1,10 +1,13 @@
 import { Menu } from "lucide-react"
+import { Logo } from "./logo"
 
 export function Navbar() {
   return (
     <header className="absolute top-0 left-0 right-0 z-20">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-10">
-        <span className="text-2xl font-extrabold tracking-tight text-foreground">Healyx</span>
+        <a href="#" aria-label="Healyx home">
+          <Logo size={32} />
+        </a>
         <div className="hidden items-center gap-8 md:flex">
           <a href="#how-it-works" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
             How it works

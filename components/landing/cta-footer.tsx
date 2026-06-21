@@ -1,4 +1,6 @@
-import { ArrowRight, FlaskConical, Watch, FileText, Sparkles, ListChecks, Stethoscope, Heart } from "lucide-react"
+import { ArrowRight, FlaskConical, Watch, FileText, Sparkles, ListChecks, Stethoscope } from "lucide-react"
+import Image from "next/image"
+import { Logo } from "./logo"
 
 const ecosystem = [
   { label: "Labs", Icon: FlaskConical },
@@ -42,7 +44,7 @@ export function CtaFooter() {
                 <ArrowRight className="h-5 w-5 rotate-90 text-muted-foreground" />
               </div>
               <div className="mt-4 inline-flex items-center gap-2.5 rounded-2xl border border-primary/30 bg-accent/40 px-6 py-3">
-                <Heart className="h-5 w-5 text-primary" />
+                <Image src="/healyx-logo.jpg" alt="Healyx logo" width={28} height={28} className="rounded-[22%]" />
                 <span className="text-lg font-extrabold tracking-tight text-card-foreground">Healyx</span>
               </div>
             </div>
@@ -61,7 +63,7 @@ export function CtaFooter() {
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 py-10 lg:flex-row lg:px-10">
-          <span className="text-2xl font-extrabold tracking-tight">Healyx</span>
+          <Logo size={30} />
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground">
             <a href="#how-it-works" className="transition-colors hover:text-foreground">How it works</a>
             <a href="#product" className="transition-colors hover:text-foreground">Product</a>
