@@ -4,23 +4,23 @@
 
 @layer base {
   :root {
-    /* Healyx dark theme */
-    --background: 160 18% 7%;
-    --foreground: 150 10% 96%;
+    /* Healyx dark theme — logo blue */
+    --background: 205 32% 8%;
+    --foreground: 200 14% 96%;
 
-    --card: 158 16% 11%;
-    --card-foreground: 150 10% 96%;
+    --card: 205 28% 12%;
+    --card-foreground: 200 14% 96%;
 
-    --muted: 158 12% 16%;
-    --muted-foreground: 150 8% 64%;
+    --muted: 205 20% 17%;
+    --muted-foreground: 205 12% 64%;
 
-    --primary: 152 52% 52%;
-    --primary-foreground: 160 30% 8%;
+    --primary: 202 75% 52%;
+    --primary-foreground: 205 40% 8%;
 
-    --accent: 152 40% 22%;
-    --accent-foreground: 150 30% 92%;
+    --accent: 202 52% 22%;
+    --accent-foreground: 200 30% 92%;
 
-    --border: 158 14% 20%;
+    --border: 205 20% 22%;
 
     --radius: 1.25rem;
   }

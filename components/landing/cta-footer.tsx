@@ -5,7 +5,7 @@ export function CtaFooter() {
     <>
       <section id="start" className="mx-auto max-w-7xl px-6 pb-20 lg:px-10">
         <div className="relative overflow-hidden rounded-[2rem] border border-border bg-card px-8 py-16 text-center lg:py-24">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_120%_at_50%_0%,hsl(152_52%_18%)_0%,transparent_70%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_120%_at_50%_0%,hsl(202_60%_20%)_0%,transparent_70%)]" />
           <div className="relative">
             <p className="text-xs font-bold tracking-widest text-primary">
               BETTER IS POSSIBLE—AND WE BUILT FOR IT
