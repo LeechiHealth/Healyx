@@ -2,28 +2,28 @@ import { Star } from "lucide-react"
 
 const reviews = [
   {
-    name: "Billy",
-    text: "Ms. Gonzalez was great! She listened to my needs and provided details of the meds and any issues that rise.",
+    name: "Marcus",
+    text: "I uploaded 4 years of bloodwork and understood more in 15 minutes than I had in years.",
   },
   {
-    name: "Terika",
-    text: "The provider was knowledgeable and helpful. She answered all my questions and made me feel as if this was not our first time meeting.",
+    name: "Priya",
+    text: "Finally everything is in one place. My labs, my wearable data, and clear explanations I actually get.",
   },
   {
-    name: "Jamie",
-    text: "The questions are to the point and easy to navigate. I'm able to voice my concerns and they are quick to respond and keep me updated.",
+    name: "Devon",
+    text: "The protocol it built from my results was specific and realistic—not generic wellness advice.",
   },
   {
-    name: "Jacqueline",
-    text: "Slowly and surely reaching my goals with Healyx's help. They have been very attentive and provided me with all the resources to be successful.",
+    name: "Alyssa",
+    text: "It flagged a trend in my LDL that two different doctors never mentioned. Genuinely eye-opening.",
   },
   {
-    name: "Diana",
-    text: "The staff has been so friendly and caring. I didn't expect that! If I call, I get an immediate answer from a real person!",
+    name: "Ken",
+    text: "Asking questions about my own results and getting straight answers changed how I think about my health.",
   },
   {
-    name: "Donna",
-    text: "The physician was very knowledgeable and ready to answer all my concerns, even about future checkups throughout my journey.",
+    name: "Sofia",
+    text: "Scanning a lab PDF and instantly seeing what's optimal and what's not feels like the future.",
   },
 ]
 
@@ -33,11 +33,11 @@ export function Reviews() {
       <div className="mx-auto max-w-2xl text-center">
         <p className="text-xs font-bold tracking-widest text-primary">THOSE WHO CHOSE HEALYX</p>
         <h2 className="mt-3 text-balance text-4xl font-extrabold tracking-tight sm:text-5xl">
-          There&apos;s a reason people are raving about us.
+          Clarity people couldn&apos;t find anywhere else.
         </h2>
         <p className="mt-4 leading-relaxed text-muted-foreground">
-          Join the multitude of people who have trusted Healyx to help change their lives, achieving
-          significant, lasting results.
+          Join the people using Healyx to finally understand their health data and act on it with
+          confidence.
         </p>
       </div>
 
